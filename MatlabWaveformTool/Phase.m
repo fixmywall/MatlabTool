@@ -15,8 +15,8 @@ classdef Phase
         WidthType = [];
         Type = [];             %can be configurable, static, or passive recovery
     end
+    
     methods
-        
         function p = Phase(type, ampVal, minAmp, maxAmp, ampStep, wVal, minW, maxW, wStep, aType, wType)
             p.Type = type;  
             p.Amplitude.min = minAmp;

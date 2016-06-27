@@ -9,14 +9,30 @@ classdef Waveform < handle
         SelectedPulse = [];
         PulseAxes = [];
         WaveformAxes = [];
+        Scale = 100;        %represents percent from -100 to 100
         
+        Constraints = [];
     end
     
     methods  
-        function w = Waveform(pulse_axes, waveform_axes)
-            w.PulseAxes = pulse_axes;
-            w.WaveformAxes = waveform_axes;
+        function w = Waveform(handles)
+            w.PulseAxes = handles.axes_Pulse;
+            w.WaveformAxes = handles.axes_Waveform;
+            w.Constraints = handles.constraints;
         end    
+        
+        function GeneratePhases(obj, handles)
+            if (obj.NumPulses == 0)
+                np = Pulse(obj.Constraints);
+                obj.AddPulse(np);
+                obj.SelectedPulse = np;
+            end
+            
+            obj.SelectedPulse.GeneratePhases(handles); 
+            
+            %plot the resulting waveform
+            obj.PlotWaveform();
+        end
         
         function AddPulse(obj, pulse)
             obj.NumPhases=obj.NumPhases+pulse.NumPhases;
@@ -47,7 +63,7 @@ classdef Waveform < handle
         function RefreshPulse(obj, num)       %refreshes the pulse, generating n pulses with stochastic/ramping features
             currentPulse=obj.SelectedPulse;
             for i = 1:num
-                newPulse=Pulse();       %new pulse that represents refreshed state
+                newPulse=Pulse(obj.Constraints);       %new pulse that represents refreshed state
                 for j=1:currentPulse.NumPhases
                     refPhase=currentPulse.Phases(j);        %represents the prev phase
                     newPulse.AddPhase(refPhase.RefreshPhase());     %create a REFRESH of the prev phase 
@@ -62,12 +78,12 @@ classdef Waveform < handle
             obj.SelectedPulse.PlotPulse(obj.PulseAxes, 0, 100);
         end
         
-        function PlotWaveform(obj, yScale)              %plots overall waveform and selected pulse
+        function PlotWaveform(obj)              %plots overall waveform and selected pulse
             cla(obj.WaveformAxes, 'reset');
             time = 0;
             for i=1:obj.NumPulses
                 hold on;
-                obj.Pulses(i).PlotPulse(obj.WaveformAxes,time, yScale);
+                obj.Pulses(i).PlotPulse(obj.WaveformAxes,time, obj.Scale);
                 time = time + obj.Pulses(i).Period;
             end
             obj.PlotSelectedPulse();

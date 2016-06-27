@@ -127,5 +127,5 @@ switch column
         end
         newWidth = round(eventdata.NewData);
         handles.pulse.ChangePhaseWidth(rowNum, newWidth);
-        handles.waveform.PlotWaveform(100);
+        handles.waveform.PlotWaveform();
 end
