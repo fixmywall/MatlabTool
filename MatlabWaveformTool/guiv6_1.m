@@ -22,7 +22,7 @@ function varargout = guiv6_1(varargin)
 
 % Edit the above text to modify the response to help guiv6_1
 
-% Last Modified by GUIDE v2.5 27-Jun-2016 17:37:45
+% Last Modified by GUIDE v2.5 28-Jun-2016 13:31:18
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -1064,8 +1064,56 @@ function PB_AddPhase_Callback(hObject, eventdata, handles)
 % hObject    handle to PB_AddPhase (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-handles.waveform.GeneratePhases(handles);
-        
+iterations = str2double(handles.EB_numPhases.String);
+if isnan(iterations)
+    return;
+end                 
+
+%get the type of amplitude and width (fixed, stochastic, etc....)
+switch (handles.BG_PhaseAmp.SelectedObject.Tag)
+    case 'RB_FixedAmp'
+        ampType = PhaseTypes.Fixed;
+        minAmp = str2double(handles.EB_FixedAmp.String);
+        maxAmp = minAmp;
+        ampStep = 0;
+    case 'RB_StochasticAmp'
+        ampType = PhaseTypes.Stochastic;
+        minAmp = str2double(handles.EB_MinStochAmp.String);
+        maxAmp = str2double(handles.EB_MaxStochAmp.String);
+        ampStep = 0;
+    case 'RB_RampAmp'
+        ampType = PhaseTypes.Ramped;
+        minAmp = str2double(handles.EB_StartRampAmp.String);
+        maxAmp = str2double(handles.EB_MaxRampAmp.String);
+        ampStep = str2double(handles.EB_RampAmpStep.String);
+end
+
+%get type of phase width, setting up the phase parameters
+switch (handles.BG_PhaseWidth.SelectedObject.Tag)
+    case 'RB_FixedWidth'
+        widthType = PhaseTypes.Fixed;
+        minWidth = str2double(handles.EB_FixedWidth.String);
+        maxWidth = minAmp;
+        widthStep = 0;
+    case 'RB_StochasticWidth'
+        widthType = PhaseTypes.Stochastic;
+        minWidth = str2double(handles.EB_MinStochWidth.String);
+        maxWidth = str2double(handles.EB_MaxStochWidth.String);
+        widthStep = 0;
+    case 'RB_RampWidth'
+        widthType = PhaseTypes.Ramped;
+        minWidth = str2double(handles.EB_RampWidthStart.String);
+        maxWidth = str2double(handles.EB_RampWidthMax.String);
+        widthStep = str2double(handles.EB_RampWidthStep.String);
+end
+
+%if ramped type amplitude, add an additional phase
+%if (ampType==PhaseTypes.Ramped)
+    %handles.waveform.AddPhase(Phase(-ampVal, minAmp, maxAmp, ampStep, widthVal, minWidth, maxWidth, widthStep, ampType, widthType));
+%end
+
+handles.waveform.GeneratePhases(ampType, widthType, minAmp, maxAmp, ampStep, minWidth, maxWidth, widthStep, iterations);
+
 
 function EB_numPhases_Callback(hObject, eventdata, handles)
 % hObject    handle to EB_numPhases (see GCBO)
@@ -1998,16 +2046,19 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 
+function ClearData(handles)
+handles.waveform = Waveform(handles);      %clears waveform object
+cla(handles.axes_Pulse, 'reset');
+cla(handles.axes_Waveform, 'reset');
+guidata(handles.mainFig, handles);
+
 % --- Executes on button press in PB_ClearAll. Clears all data pertaining
 % to the waveform and the plots
 function PB_ClearAll_Callback(hObject, eventdata, handles)
 % hObject    handle to PB_ClearAll (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-handles.waveform = Waveform(handles);      %clears waveform object
-cla(handles.axes_Pulse, 'reset');
-cla(handles.axes_Waveform, 'reset');
-guidata(hObject,handles);
+ClearData(handles);
 
 function EB_MaxRampAmp_Callback(hObject, eventdata, handles)
 % hObject    handle to EB_MaxRampAmp (see GCBO)
@@ -2084,18 +2135,35 @@ if isnan(str2double(hEdit.String))
     hEdit.String = '';
 end
 
-
+%UpdateMode: called whenever the user changes mode from the popup menu
 function UpdateMode(handles, mode)
 handles.constraints.Update(mode);
+
+%clear the waveform object
+handles.waveform = Waveform(handles);
+cla(handles.axes_Pulse, 'reset');
+cla(handles.axes_Waveform, 'reset');
+
 switch mode
     case Constants.MODE_FALCON
         %update GUI
         handles.PANEL_phaseSetup.Visible = 'off';
         handles.PANEL_falconPulseSetup.Visible = 'on';
+        handles.EB_falconPhaseOneAmp.String = num2str(Constants.FALCON_DEFAULT_AMP(1));
+        handles.EB_falconPhaseTwoAmp.String = num2str(Constants.FALCON_DEFAULT_AMP(2));
+        handles.EB_falconPhaseOneWidth.String = num2str(Constants.FALCON_DEFAULT_WIDTH(1));
+        handles.EB_falconPhaseTwoWidth.String = num2str(Constants.FALCON_DEFAULT_WIDTH(2));
+        %generate the two default phases
+        handles.waveform.GeneratePhases(PhaseTypes.Fixed, PhaseTypes.Fixed, Constants.FALCON_DEFAULT_AMP(1), Constants.FALCON_DEFAULT_AMP(1), ...
+                                        0, Constants.FALCON_DEFAULT_WIDTH(1), Constants.FALCON_DEFAULT_WIDTH(1), 0, 1 );
+        handles.waveform.GeneratePhases(PhaseTypes.Fixed, PhaseTypes.Fixed, Constants.FALCON_DEFAULT_AMP(2), Constants.FALCON_DEFAULT_AMP(2), ...
+                                        0, Constants.FALCON_DEFAULT_WIDTH(2), Constants.FALCON_DEFAULT_WIDTH(2), 0, 1 );
     case Constants.MODE_SANDBOX
-        handles.PANEL_phaseSetup.Visible = 'on';
         handles.PANEL_falconPulseSetup.Visible = 'off';
+        handles.PANEL_phaseSetup.Visible = 'on';   
 end
+
+guidata(handles.mainFig, handles);
 
 
 
@@ -2168,26 +2236,35 @@ handles.waveform.Scale = coefficient;
 handles.waveform.PlotWaveform();
 
 
-% --- Executes on button press in PB_falconAddPulse.
-function PB_falconAddPulse_Callback(hObject, eventdata, handles)
-% hObject    handle to PB_falconAddPulse (see GCBO)
+% --- Executes on button press in PB_falconAddPhase.
+function PB_falconAddPhase_Callback(hObject, eventdata, handles)
+% hObject    handle to PB_falconAddPhase (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+amp1 = str2double(handles.EB_falconPhaseOneAmp.String);
+width1 = str2double(handles.EB_falconPhaseOneWidth.String);
+amp2 = str2double(handles.EB_falconPhaseTwoAmp.String);
+width2 = str2double(handles.EB_falconPhaseTwoWidth.String);
+
+handles.waveform.NewPulse();
+handles.waveform.GeneratePhases(PhaseTypes.Fixed, PhaseTypes.Fixed, amp1, amp1, ...
+                                0, width1, width1, 0, 1 );
+handles.waveform.GeneratePhases(PhaseTypes.Fixed, PhaseTypes.Fixed, amp2, amp2, ...
+                                0, width2, width2, 0, 1 );
+
+
+function EB_falconPhaseTwoAmp_Callback(hObject, eventdata, handles)
+% hObject    handle to EB_falconPhaseTwoAmp (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-
-
-function edit104_Callback(hObject, eventdata, handles)
-% hObject    handle to edit104 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of edit104 as text
-%        str2double(get(hObject,'String')) returns contents of edit104 as a double
+% Hints: get(hObject,'String') returns contents of EB_falconPhaseTwoAmp as text
+%        str2double(get(hObject,'String')) returns contents of EB_falconPhaseTwoAmp as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function edit104_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit104 (see GCBO)
+function EB_falconPhaseTwoAmp_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to EB_falconPhaseTwoAmp (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -2199,18 +2276,18 @@ end
 
 
 
-function edit105_Callback(hObject, eventdata, handles)
-% hObject    handle to edit105 (see GCBO)
+function EB_falconPhaseTwoWidth_Callback(hObject, eventdata, handles)
+% hObject    handle to EB_falconPhaseTwoWidth (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit105 as text
-%        str2double(get(hObject,'String')) returns contents of edit105 as a double
+% Hints: get(hObject,'String') returns contents of EB_falconPhaseTwoWidth as text
+%        str2double(get(hObject,'String')) returns contents of EB_falconPhaseTwoWidth as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function edit105_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit105 (see GCBO)
+function EB_falconPhaseTwoWidth_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to EB_falconPhaseTwoWidth (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -2222,18 +2299,18 @@ end
 
 
 
-function edit98_Callback(hObject, eventdata, handles)
-% hObject    handle to edit98 (see GCBO)
+function EB_falconPhaseOneAmp_Callback(hObject, eventdata, handles)
+% hObject    handle to EB_falconPhaseOneAmp (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit98 as text
-%        str2double(get(hObject,'String')) returns contents of edit98 as a double
+% Hints: get(hObject,'String') returns contents of EB_falconPhaseOneAmp as text
+%        str2double(get(hObject,'String')) returns contents of EB_falconPhaseOneAmp as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function edit98_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit98 (see GCBO)
+function EB_falconPhaseOneAmp_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to EB_falconPhaseOneAmp (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -2245,18 +2322,18 @@ end
 
 
 
-function edit100_Callback(hObject, eventdata, handles)
-% hObject    handle to edit100 (see GCBO)
+function EB_falconPhaseOneWidth_Callback(hObject, eventdata, handles)
+% hObject    handle to EB_falconPhaseOneWidth (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit100 as text
-%        str2double(get(hObject,'String')) returns contents of edit100 as a double
+% Hints: get(hObject,'String') returns contents of EB_falconPhaseOneWidth as text
+%        str2double(get(hObject,'String')) returns contents of EB_falconPhaseOneWidth as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function edit100_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit100 (see GCBO)
+function EB_falconPhaseOneWidth_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to EB_falconPhaseOneWidth (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -2265,3 +2342,33 @@ function edit100_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+
+function EB_falconAddPhases_Callback(hObject, eventdata, handles)
+% hObject    handle to EB_falconAddPhases (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of EB_falconAddPhases as text
+%        str2double(get(hObject,'String')) returns contents of EB_falconAddPhases as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function EB_falconAddPhases_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to EB_falconAddPhases (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in pushbutton15.
+function pushbutton15_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton15 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)

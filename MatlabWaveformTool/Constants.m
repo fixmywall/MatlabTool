@@ -18,5 +18,9 @@ classdef Constants
         MODE_NINJA_2 = 'Ninja-2';
         MODE_WILSON_1 = 'Wilson-1';
         MODE_WILSON_2 = 'Wilson-2';
+        
+        %falcon defaults
+        FALCON_DEFAULT_AMP = [50,30];
+        FALCON_DEFAULT_WIDTH = [10,10];
     end
 end

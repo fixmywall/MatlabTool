@@ -17,18 +17,42 @@ classdef Phase
     end
     
     methods
-        function p = Phase(type, ampVal, minAmp, maxAmp, ampStep, wVal, minW, maxW, wStep, aType, wType)
+        
+        %refreshNum: if the phase is a 'refresh' of another phase,
+        %refreshNum represents the phase after Num refreshes
+        function p = Phase(type, minAmp, maxAmp, ampStep, minW, maxW, wStep, aType, wType, refreshNum)
             p.Type = type;  
             p.Amplitude.min = minAmp;
-            p.Amplitude.max = maxAmp;
-            p.Amplitude.value = ampVal;                
+            p.Amplitude.max = maxAmp;           
             p.Amplitude.stepSize = ampStep;
             p.Width.min = minW;
             p.Width.max = maxW;
-            p.Width.value = wVal;
             p.Width.stepSize = wStep;           
             p.AmpType = aType;
             p.WidthType = wType;
+            
+            %calculate the values of amplitude and width based on their
+            %types
+            switch aType
+                case PhaseTypes.Fixed
+                    p.Amplitude.value = minAmp;
+                case PhaseTypes.Ramped   %include ramping properties
+                    p.Amplitude.value = minAmp + refreshNum*ampStep;
+                    if p.Amplitude.value > maxAmp
+                        p.Amplitude.value = minAmp;
+                    end
+                    
+                case PhaseTypes.Stochastic
+                    p.Amplitude.value = randi([minAmp,maxAmp],1,1);
+            end
+            switch wType
+                case PhaseTypes.Fixed
+                    p.Width.value = minW;
+                case PhaseTypes.Ramped
+                    p.Width.value = mod(minW + refreshNum*wStep, maxW);
+                case PhaseTypes.Stochastic
+                    p.Width.value = randi([minW,maxW],1,1);
+            end
         end
        
         
@@ -54,64 +78,9 @@ classdef Phase
             t = [start, start+obj.Width.value];
         end
         
-        function p = RefreshPhase(obj)
-            switch obj.Type
-                case PhaseTypes.RectConfigurable
-                    switch obj.AmpType
-                        case PhaseTypes.Fixed
-                            newAmp=obj.Amplitude.value;
-                        case PhaseTypes.Stochastic
-                            newAmp=obj.GenerateStochasticAmp();
-                        case PhaseTypes.Ramped
-                            %get the slope-adjusted step size
-                            if obj.Amplitude.max >= obj.Amplitude.min
-                                effStepSize = obj.Amplitude.stepSize;
-                            else
-                                effStepSize = -obj.Amplitude.stepSize;
-                            end
-
-                            newAmp=obj.Amplitude.value + effStepSize;
-                            if effStepSize > 0
-                                if newAmp>obj.Amplitude.max
-                                    %TODO: account for all three types of
-                                    %ramping. Currently the default behavior is
-                                    %looping
-                                    newAmp=obj.Amplitude.min;   %loops back
-                                end
-                            elseif effStepSize < 0
-                                if newAmp<obj.Amplitude.max
-                                    %TODO: account for all three types of
-                                    %ramping. Currently the default behavior is
-                                    %looping
-                                    newAmp=obj.Amplitude.max;
-                                end
-                            end  
-                    end
-                                                  
-                    switch obj.WidthType
-                        case PhaseTypes.Fixed
-                            newWidth=obj.Width.value;
-                        case PhaseTypes.Stochastic
-                            newWidth=obj.GenerateStochasticWidth();
-                        case PhaseTypes.Ramped
-                            newWidth=obj.Width.value + obj.Width.stepSize;
-                            if newWidth>obj.Width.max
-                                %TODO: account for all three types of
-                                %ramping. Currently the default behavior is
-                                %looping
-                                newWidth=obj.Width.min;
-                            end
-                    end 
-                    
-                    %create new configurable phase
-                    p=Phase(PhaseTypes.RectConfigurable, newAmp,obj.Amplitude.min,obj.Amplitude.max,obj.Amplitude.stepSize,...
-                    newWidth,obj.Width.min,obj.Width.max,obj.Width.stepSize,obj.AmpType,obj.WidthType);
-                    
-                %otherwise, p is a handle to whatever obj points to (identical)
-                case PhaseTypes.RectStatic
-                case PhaseTypes.PassiveRecovery
-                    p = obj;
-            end
+        function p = RefreshPhase(obj, refreshNum)
+            p = Phase(  obj.Type, obj.Amplitude.min, obj.Amplitude.max, obj.Amplitude.stepSize, obj.Width.min, obj.Width.max,...
+                        obj.Width.stepSize, obj.AmpType, obj.WidthType, refreshNum);
         end
 
     end

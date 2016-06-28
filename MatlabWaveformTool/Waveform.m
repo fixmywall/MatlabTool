@@ -21,14 +21,28 @@ classdef Waveform < handle
             w.Constraints = handles.constraints;
         end    
         
-        function GeneratePhases(obj, handles)
+        %creates a new empty pulse, adds to Pulses and sets selectedpulse
+        %to it
+        function NewPulse(obj)
+            newPulse = Pulse(obj.Constraints);
+            obj.AddPulse(newPulse);
+            obj.SelectedPulse = newPulse;
+        end
+        
+        function GeneratePhases(obj, ampType, widthType, minAmp, maxAmp, ampStep, minWidth, maxWidth, widthStep, num)
+            %if waveform is empty, add a new pulse
             if (obj.NumPulses == 0)
-                np = Pulse(obj.Constraints);
-                obj.AddPulse(np);
-                obj.SelectedPulse = np;
+                obj.NewPulse();
             end
             
-            obj.SelectedPulse.GeneratePhases(handles); 
+            %if number of phases in the selected pulse exceeds limit,
+            %display error and return
+            if num + obj.SelectedPulse.NumPhases > obj.Constraints.MaxUserPhasesPerPulse
+                warningPopUpMenu(Constants.ERROR_TOO_MANY_PHASES);
+                return;
+            end
+            obj.NumPhases = obj.NumPhases + num;
+            obj.SelectedPulse.GeneratePhases(ampType, widthType, minAmp, maxAmp, ampStep, minWidth, maxWidth, widthStep, num); 
             
             %plot the resulting waveform
             obj.PlotWaveform();
@@ -46,11 +60,7 @@ classdef Waveform < handle
             end
             obj.NumPulses=obj.NumPulses+length(pulses);
             obj.Pulses= [obj.Pulses,pulses];
-        end
-        
-        function AddPhases(obj, phases)           %adds phase to SelectedPulse
-            obj.SelectedPulse.AddPhases(phases);
-        end
+        end       
         
         function SelectPulse(obj,i)             %select the pulse indexed in Pulses by i
             if (i>obj.NumPulses || i<1)
@@ -61,16 +71,11 @@ classdef Waveform < handle
         end
         
         function RefreshPulse(obj, num)       %refreshes the pulse, generating n pulses with stochastic/ramping features
-            currentPulse=obj.SelectedPulse;
+            refreshedPulses = repmat(Pulse(obj.Constraints),1,num);
             for i = 1:num
-                newPulse=Pulse(obj.Constraints);       %new pulse that represents refreshed state
-                for j=1:currentPulse.NumPhases
-                    refPhase=currentPulse.Phases(j);        %represents the prev phase
-                    newPulse.AddPhase(refPhase.RefreshPhase());     %create a REFRESH of the prev phase 
-                end
-                currentPulse = newPulse;
-                obj.AddPulse(newPulse);
+                refreshedPulses(i) = obj.SelectedPulse.refreshPulse(i);
             end
+            obj.AddPulses(refreshedPulses);
         end
 
         function PlotSelectedPulse(obj)
