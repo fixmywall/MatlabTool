@@ -22,7 +22,7 @@ function varargout = guiv6_1(varargin)
 
 % Edit the above text to modify the response to help guiv6_1
 
-% Last Modified by GUIDE v2.5 27-Jun-2016 12:08:11
+% Last Modified by GUIDE v2.5 27-Jun-2016 17:37:45
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -54,7 +54,9 @@ function guiv6_1_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for guiv6_1
 handles.output = hObject;
-handles.constraints = Constraints(handles.POP_modeSelect.String{handles.POP_modeSelect.Value});
+defaultMode = handles.POP_modeSelect.String{handles.POP_modeSelect.Value};
+handles.constraints = Constraints(defaultMode);
+UpdateMode(handles, defaultMode);
 handles.waveform = Waveform(handles);      %represents a collection of pulse objects
 
 %update the electrode group box with array of all electrode edit boxes
@@ -2083,6 +2085,20 @@ if isnan(str2double(hEdit.String))
 end
 
 
+function UpdateMode(handles, mode)
+handles.constraints.Update(mode);
+switch mode
+    case Constants.MODE_FALCON
+        %update GUI
+        handles.PANEL_phaseSetup.Visible = 'off';
+        handles.PANEL_falconPulseSetup.Visible = 'on';
+    case Constants.MODE_SANDBOX
+        handles.PANEL_phaseSetup.Visible = 'on';
+        handles.PANEL_falconPulseSetup.Visible = 'off';
+end
+
+
+
 % --- Executes on selection change in POP_modeSelect.
 function POP_modeSelect_Callback(hObject, eventdata, handles)
 % hObject    handle to POP_modeSelect (see GCBO)
@@ -2092,7 +2108,7 @@ function POP_modeSelect_Callback(hObject, eventdata, handles)
 % Hints: contents = cellstr(get(hObject,'String')) returns POP_modeSelect contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from POP_modeSelect
 mode = hObject.String{hObject.Value};
-handles.constraints.Update(mode);
+UpdateMode(handles, mode);
 
 
 % --- Executes during object creation, after setting all properties.
@@ -2150,3 +2166,102 @@ else    %otherwise, get scaling coefficient
 end
 handles.waveform.Scale = coefficient;
 handles.waveform.PlotWaveform();
+
+
+% --- Executes on button press in PB_falconAddPulse.
+function PB_falconAddPulse_Callback(hObject, eventdata, handles)
+% hObject    handle to PB_falconAddPulse (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+
+function edit104_Callback(hObject, eventdata, handles)
+% hObject    handle to edit104 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit104 as text
+%        str2double(get(hObject,'String')) returns contents of edit104 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit104_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit104 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit105_Callback(hObject, eventdata, handles)
+% hObject    handle to edit105 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit105 as text
+%        str2double(get(hObject,'String')) returns contents of edit105 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit105_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit105 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit98_Callback(hObject, eventdata, handles)
+% hObject    handle to edit98 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit98 as text
+%        str2double(get(hObject,'String')) returns contents of edit98 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit98_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit98 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit100_Callback(hObject, eventdata, handles)
+% hObject    handle to edit100 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit100 as text
+%        str2double(get(hObject,'String')) returns contents of edit100 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit100_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit100 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end

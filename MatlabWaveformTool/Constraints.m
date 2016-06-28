@@ -6,12 +6,12 @@ classdef Constraints < handle
         MaxElectrodes = [];
         TimeWarmup = [];
         TimePrePulse = [];
-        AmpPrePulse = [];   
+        AmpPrePulse = [];
         TimeInterPulse = [];
         TimePassiveRecovery = [];
         TimeInterPhase = [];                 %delay between pulses
         MaxRate = [];       %Hz
-        MinRate = [];       %Hz       
+        MinRate = [];       %Hz
     end
     
     methods
@@ -21,7 +21,8 @@ classdef Constraints < handle
         
         function Update(obj, mode)
             switch mode
-                %need to know all of the programming rules before updating
+                %need to know all of the programming rules before adding to
+                %this section
                 case Constants.MODE_SANDBOX
                     obj.MaxUserPhasesPerPulse = 10000;
                     obj.MaxElectrodes = 32;
