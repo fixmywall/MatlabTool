@@ -8,7 +8,7 @@ classdef Pulse < handle
         Period=0;                %The total time spanned by the phases
         
         Constraints = [];
-    end
+        ends
     
     methods
         function p=Pulse(constraints)

@@ -83,14 +83,28 @@ classdef Waveform < handle
             obj.SelectedPulse.PlotPulse(obj.PulseAxes, 0, 100);
         end
         
+        function Y = GetAxesData(obj)
+            y = cell(1,obj.NumPulses);
+            t = cell(1,obj.NumPulses);
+            startTime = 0;
+            for i = 1:obj.NumPulses
+                Y_pulse = obj.Pulses(i).GetAxesData(startTime);
+                y{i} = Y_pulse{1};
+                t{i} = Y_pulse{2};
+                startTime = startTime + obj.Pulses(i).Period;
+            end
+            
+            Y{1,:} = cell2mat(y);
+            Y{2,:} = cell2mat(t);
+        end
+        
         function PlotWaveform(obj)              %plots overall waveform and selected pulse
             cla(obj.WaveformAxes, 'reset');
-            time = 0;
-            for i=1:obj.NumPulses
-                hold on;
-                obj.Pulses(i).PlotPulse(obj.WaveformAxes,time, obj.Scale);
-                time = time + obj.Pulses(i).Period;
-            end
+            
+            %get the axes data, and then plot the data onto waveformAxes
+            Y = obj.GetAxesData;
+            axes(obj.WaveformAxes);
+            plot(Y{1}, Y{2});
             obj.PlotSelectedPulse();
         end
         
