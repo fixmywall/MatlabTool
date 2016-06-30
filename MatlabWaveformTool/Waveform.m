@@ -102,7 +102,7 @@ classdef Waveform < handle
             cla(obj.WaveformAxes, 'reset');
             
             %get the axes data, and then plot the data onto waveformAxes
-            Y = obj.GetAxesData;
+            Y = obj.GetAxesData();
             axes(obj.WaveformAxes);
             plot(Y{1}, Y{2});
             obj.PlotSelectedPulse();
@@ -117,6 +117,16 @@ classdef Waveform < handle
                 row{3}='NA';
                 hTable.Data = [hTable.Data;row];
             end
+        end
+        
+        %wrapper for Pulse.SetPhaseWidth
+        function SetPhaseWidth(obj, i, width)
+            obj.SelectedPulse.SetPhaseWidth(i, width);
+        end
+        
+        %wrapper for Pulse.SetPhaseAmplitude
+        function SetPhaseAmplitude(obj, i, amp)
+            obj.SelectedPulse.SetPhaseAmplitude(i, amp);
         end
     end
 end

@@ -8,7 +8,7 @@ classdef Pulse < handle
         Period=0;                %The total time spanned by the phases
         
         Constraints = [];
-        ends
+    end
     
     methods
         function p=Pulse(constraints)
@@ -34,7 +34,7 @@ classdef Pulse < handle
         %generates user-configurable phases based on user input into the GUI
         function GeneratePhases(obj, ampType, widthType, minAmp, maxAmp, ampStep, minWidth, maxWidth, widthStep, num)
             newPhases = repmat(Phase([],[],[],[],[],[],[],PhaseTypes.Fixed, PhaseTypes.Fixed), 1,num);
-            
+                        
             for i=1:num       
                 newPhases(i) = Phase(  PhaseTypes.RectConfigurable, minAmp, maxAmp, ampStep, ...
                                        minWidth, maxWidth, widthStep, ampType, widthType, 0);
@@ -43,14 +43,71 @@ classdef Pulse < handle
             obj.AddPhases(newPhases);
         end
         
+        %returns array of ALL phases, including the static ones
+        function P = GetAllPhases(obj)
+            prePhases = [];
+            if obj.Constraints.DelayEnabled
+                prePhases = [prePhases, Phase.StaticPhase(0, obj.Constraints.TimeDelay)];
+            end
+            if obj.Constraints.WarmupEnabled
+                prePhases = [prePhases, Phase.StaticPhase(0, obj.Constraints.TimeWarmup)];
+            end
+            if obj.Constraints.PrePulseEnabled
+                prePhases = [prePhases, Phase.StaticPhase(obj.Constraints.AmplitudePrePulse, obj.Constraints.TimePrePulse)];
+            end
+            
+            %add the interphase delay between each user-set phase
+            if obj.NumPhases == 0
+                userPhases = [];
+            else
+                if obj.Constraints.InterPhaseEnabled
+                    userPhases = repmat(Phase([],[],[],[],[],[],[],PhaseTypes.Fixed, PhaseTypes.Fixed), 1,obj.NumPhases*2-1);
+                    for i = 1:obj.NumPhases
+                        if i == obj.NumPhases
+                            userPhases(end) = obj.Phases(obj.NumPhases);
+                        else
+                            userPhases(2*i - 1) = obj.Phases(i);
+                            userPhases(2*i) = Phase.StaticPhase(0,obj.Constraints.TimeInterPhase);
+                        end
+                    end
+                else
+                    userPhases = obj.Phases;
+                end
+            end
+            
+            postPhases = [];
+            %future: get passiverecovery amplitude
+            
+            if obj.Constraints.PassiveRecoveryEnabled
+                postPhases = [postPhases, Phase.PassiveRecovery(obj.GetPassiveRecoveryAmplitude(), obj.Constraints.TimePassiveRecovery)];
+            end
+            
+            if obj.Constraints.InterPulseEnabled
+                postPhases = [postPhases, Phase.StaticPhase(0, obj.GetInterPulseWidth())];
+            end
+            
+            P = [prePhases, userPhases, postPhases];
+        end
+        
+        %calculate the starting point of the passive recovery phase by
+        %computing the integral
+        function amp = GetPassiveRecoveryAmplitude(obj)
+            amp = 15;
+        end
+        
+        function t = GetInterPulseWidth(obj)
+            t = 2000;
+        end
+        
         function Y = GetAxesData(obj, startTime)
-            t=cell(1,obj.NumPhases);   
-            y=cell(1,obj.NumPhases);
+            allPhases = obj.GetAllPhases();
+            t=cell(1,length(allPhases));   
+            y=cell(1,length(allPhases));
             start = startTime;
-            for i=1:obj.NumPhases
-                t{i} = obj.Phases(i).GenerateDomain(start);
-                y{i} = obj.Phases(i).GenerateArrays();
-                start = start+obj.Phases(i).Width.value;
+            for i=1:length(allPhases)
+                t{i} = allPhases(i).GenerateDomain(start);
+                y{i} = allPhases(i).GenerateArrays();
+                start = start+allPhases(i).Width.value;
             end
             Y{1}=cell2mat(t);
             Y{2}=cell2mat(y);
@@ -77,14 +134,14 @@ classdef Pulse < handle
             p.AddPhases(refreshedPhases);
         end
         
-        function ChangePhaseAmplitude(obj, i, newAmp)       %changes the amplitude of the phase indexed by i
+        function SetPhaseAmplitude(obj, i, newAmp)       %changes the amplitude of the phase indexed by i
             if (i<1) || (i>obj.NumPhases)
                 return;
             end
             obj.Phases(i).Amplitude.value = newAmp;
         end
         
-        function ChangePhaseWidth(obj, i, newWidth)         %changes the width of the phase indexed by i
+        function SetPhaseWidth(obj, i, newWidth)         %changes the width of the phase indexed by i
             if (i<1) || (i>obj.NumPhases)
                 return;
             end
@@ -116,12 +173,7 @@ classdef Pulse < handle
                 end
                 hTable.Data = [hTable.Data;row];
             end
-        end 
-        
-        %mode: string that describes mode (located in Constants obj)
-        function UpdateConstraints(obj, constraints)   
-            obj.MaxPhases = constraints.MaxUserPhasesPerPulse;
-        end
+        end     
     end
 end
 

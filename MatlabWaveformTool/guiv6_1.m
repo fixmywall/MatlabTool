@@ -22,7 +22,7 @@ function varargout = guiv6_1(varargin)
 
 % Edit the above text to modify the response to help guiv6_1
 
-% Last Modified by GUIDE v2.5 29-Jun-2016 10:02:57
+% Last Modified by GUIDE v2.5 29-Jun-2016 16:15:08
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -2158,6 +2158,7 @@ switch mode
                                         0, Constants.FALCON_DEFAULT_WIDTH(1), Constants.FALCON_DEFAULT_WIDTH(1), 0, 1 );
         handles.waveform.GeneratePhases(PhaseTypes.Fixed, PhaseTypes.Fixed, Constants.FALCON_DEFAULT_AMP(2), Constants.FALCON_DEFAULT_AMP(2), ...
                                         0, Constants.FALCON_DEFAULT_WIDTH(2), Constants.FALCON_DEFAULT_WIDTH(2), 0, 1 );
+                                    
     case Constants.MODE_SANDBOX
         handles.PANEL_falconPulseSetup.Visible = 'off';
         handles.PANEL_phaseSetup.Visible = 'on';   
@@ -2236,9 +2237,9 @@ handles.waveform.Scale = coefficient;
 handles.waveform.PlotWaveform();
 
 
-% --- Executes on button press in PB_falconAddPhase.
-function PB_falconAddPhase_Callback(hObject, eventdata, handles)
-% hObject    handle to PB_falconAddPhase (see GCBO)
+% --- Executes on button press in PB_falconUpdatePhase.
+function PB_falconUpdatePhase_Callback(hObject, eventdata, handles)
+% hObject    handle to PB_falconUpdatePhase (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 amp1 = str2double(handles.EB_falconPhaseOneAmp.String);
@@ -2246,12 +2247,11 @@ width1 = str2double(handles.EB_falconPhaseOneWidth.String);
 amp2 = str2double(handles.EB_falconPhaseTwoAmp.String);
 width2 = str2double(handles.EB_falconPhaseTwoWidth.String);
 
-handles.waveform.NewPulse();
-handles.waveform.GeneratePhases(PhaseTypes.Fixed, PhaseTypes.Fixed, amp1, amp1, ...
-                                0, width1, width1, 0, 1 );
-handles.waveform.GeneratePhases(PhaseTypes.Fixed, PhaseTypes.Fixed, amp2, amp2, ...
-                                0, width2, width2, 0, 1 );
-
+handles.waveform.SetPhaseAmplitude(1, amp1);
+handles.waveform.SetPhaseWidth(1, width1);
+handles.waveform.SetPhaseAmplitude(2, amp2);
+handles.waveform.SetPhaseWidth(2, width2);
+handles.waveform.PlotWaveform();
 
 function EB_falconPhaseTwoAmp_Callback(hObject, eventdata, handles)
 % hObject    handle to EB_falconPhaseTwoAmp (see GCBO)

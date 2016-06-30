@@ -115,9 +115,9 @@ switch column
             warningPopUpMenu(Constants.INT_REQUIRED_ERROR);
             return;
         end
-        newAmp = round(eventdata.NewData,-1);          %round to the nearest tens
+        newAmp = round(eventdata.NewData,2);          %round to the nearest hundredths
         
-        handles.pulse.ChangePhaseAmplitude(rowNum, newAmp);
+        handles.pulse.SetPhaseAmplitude(rowNum, newAmp);
         handles.waveform.PlotWaveform(100);                %re-draw waveform
 
     case handles.cNames.widthValue
@@ -126,6 +126,6 @@ switch column
             return;
         end
         newWidth = round(eventdata.NewData);
-        handles.pulse.ChangePhaseWidth(rowNum, newWidth);
+        handles.pulse.SetPhaseWidth(rowNum, newWidth);
         handles.waveform.PlotWaveform();
 end

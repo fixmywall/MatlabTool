@@ -57,7 +57,7 @@ classdef Phase
        
         
         function r = GenerateStochasticAmp(obj)         %generate random integer amplitude using min and max
-             r = randi([obj.Amplitude.min,obj.Amplitude.max],1,1);
+            r = randi([obj.Amplitude.min,obj.Amplitude.max],1,1);
         end
         
         function r = GenerateStochasticWidth(obj)       %generate random integer width using min and max
@@ -83,6 +83,16 @@ classdef Phase
                         obj.Width.stepSize, obj.AmpType, obj.WidthType, refreshNum);
         end
 
+    end
+    methods(Static)
+        %create a static phase with given amplitude and width
+        function p = StaticPhase(amp, width)
+            p = Phase(PhaseTypes.RectStatic, amp, amp, 0, width, width, 0, PhaseTypes.Fixed, PhaseTypes.Fixed, 0);
+        end
+        
+        function p = PassiveRecovery(start, width)
+            p = Phase(PhaseTypes.PassiveRecovery, start, start, 0, width, width, 0, PhaseTypes.Fixed, PhaseTypes.Fixed, 0);
+        end
     end
 end
 
