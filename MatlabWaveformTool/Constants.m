@@ -21,6 +21,6 @@ classdef Constants
         
         %falcon defaults
         FALCON_DEFAULT_AMP = [12,22];
-        FALCON_DEFAULT_WIDTH = [500,500];
+        FALCON_DEFAULT_WIDTH = [900,700];
     end
 end

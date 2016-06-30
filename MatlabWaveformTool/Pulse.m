@@ -20,7 +20,7 @@ classdef Pulse < handle
             obj.Phases(obj.NumPhases)=p;
             %add to the Period the width of the phase
             obj.Period=obj.Period+p.Width.value;
-        end
+        end     
         
         function AddPhases(obj, phases)
             obj.NumPhases = obj.NumPhases+length(phases);
@@ -76,10 +76,20 @@ classdef Pulse < handle
             end
             
             postPhases = [];
-            %future: get passiverecovery amplitude
             
+            %compute total area to calculate the passiverecovery starting value
             if obj.Constraints.PassiveRecoveryEnabled
-                postPhases = [postPhases, Phase.PassiveRecovery(obj.GetPassiveRecoveryAmplitude(), obj.Constraints.TimePassiveRecovery)];
+                area=0;
+                for i=1:length(prePhases)
+                    area = area + prePhases(i).Area();
+                end
+                for i=1:length(userPhases)
+                    area = area + userPhases(i).Area();
+                end
+                %from the area and width of PR, calculate its starting
+                %point
+                startPoint = Pulse.ComputePassiveRecoveryHeight(area, obj.Constraints.TimePassiveRecovery);
+                postPhases = [postPhases, Phase.PassiveRecovery(startPoint, obj.Constraints.TimePassiveRecovery)];
             end
             
             if obj.Constraints.InterPulseEnabled
@@ -87,13 +97,9 @@ classdef Pulse < handle
             end
             
             P = [prePhases, userPhases, postPhases];
-        end
+        end  
         
-        %calculate the starting point of the passive recovery phase by
-        %computing the integral
-        function amp = GetPassiveRecoveryAmplitude(obj)
-            amp = 15;
-        end
+        
         
         function t = GetInterPulseWidth(obj)
             t = 2000;
@@ -174,6 +180,12 @@ classdef Pulse < handle
                 hTable.Data = [hTable.Data;row];
             end
         end     
+    end
+    methods(Static)
+        %in future: account for exponential passive recovery
+        function h = ComputePassiveRecoveryHeight(area, width)
+            h = -2*area / width;
+        end
     end
 end
 

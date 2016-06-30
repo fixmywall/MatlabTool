@@ -2139,10 +2139,7 @@ end
 function isInt = StringIsInteger(string)
 val = str2double(string);
 if isnan(val) || mod(val, 1.0) ~= 0
-    isInt = false;
-    warningPopUpMenu(Constants.INT_REQUIRED_ERROR);
-else
-    isInt = true;
+    isInt = c
 end
 
 %UpdateMode: updates the waveform and GUI elements whenever the mode is switched
@@ -2455,5 +2452,5 @@ function PB_falconNumPulsesApply_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 strval = handles.EB_falconNumPulses.String;
 if StringIsInteger(strval)
-    handles.waveform.RepeatSelectedPulse(str2double(strval));
+    handles.waveform.RepeatSelectedPulse(strval);
 end

@@ -22,7 +22,7 @@ function varargout = SandboxRuleSettings(varargin)
 
 % Edit the above text to modify the response to help SandboxRuleSettings
 
-% Last Modified by GUIDE v2.5 29-Jun-2016 11:02:11
+% Last Modified by GUIDE v2.5 30-Jun-2016 13:38:31
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -48,16 +48,26 @@ end
 %(handles.rules)
 function InitializeObjects(handles)
 %initialize checkboxes
-handles.CB_passiveRecovery.Value = handles.rules.PassiveRecoveryEnabled;
 handles.CB_delay.Value = handles.rules.DelayEnabled;
+handles.CB_warmup.Value = handles.rules.WarmupEnabled;
+handles.CB_prePulse.Value = handles.rules.PrePulseEnabled;
+handles.CB_interPhase.Value = handles.rules.InterPhaseEnabled;
+handles.CB_passiveRecovery.Value = handles.rules.PassiveRecoveryEnabled;
+handles.CB_interPulse.Value = handles.rules.InterPulseEnabled;
 
 %initialize edit boxes
-handles.EB_passiveRecovery.String = num2str(handles.rules.TimePassiveRecovery);
 handles.EB_delay.String = num2str(handles.rules.TimeDelay);
+handles.EB_warmup.String = num2str(handles.rules.TimeWarmup);
+handles.EB_prePulse.String = num2str(handles.rules.TimePrePulse);
+handles.EB_interPhase.String = num2str(handles.rules.TimeInterPhase);
+handles.EB_passiveRecovery.String = num2str(handles.rules.TimePassiveRecovery);
 
 %toggle all edit boxes
-ToggleEditBox(handles.CB_passiveRecovery, handles.EB_passiveRecovery);
+ToggleEditBox(handles.CB_warmup, handles.EB_warmup);
 ToggleEditBox(handles.CB_delay, handles.EB_delay);
+ToggleEditBox(handles.CB_prePulse, handles.EB_prePulse);
+ToggleEditBox(handles.CB_interPhase, handles.EB_interPhase);
+ToggleEditBox(handles.CB_passiveRecovery, handles.EB_passiveRecovery);
 
 
 % --- Executes just before SandboxRuleSettings is made visible.
@@ -78,7 +88,7 @@ InitializeObjects(handles);
 guidata(hObject, handles);
 
 % UIWAIT makes SandboxRuleSettings wait for user response (see UIRESUME)
-% uiwait(handles.mainFig);
+% uiwait(handles.SandboxRuleSettings);
 
 
 % --- Outputs from this function are returned to the command line.
@@ -123,12 +133,25 @@ function radiobutton2_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of radiobutton2
 
 
+%saves the state of GUI elements into the constraints (rules) object
 function SaveRules(handles)
+handles.rules.DelayEnabled = logical(handles.CB_delay.Value);
+handles.rules.TimeDelay = str2double(handles.EB_delay.String);
+
+handles.rules.WarmupEnabled = logical(handles.CB_warmup.Value);
+handles.rules.TimeWarmup = str2double(handles.EB_warmup.String);
+
+handles.rules.PrePulseEnabled = logical(handles.CB_prePulse.Value);
+handles.rules.TimePrePulse = str2double(handles.EB_prePulse.String);
+
+handles.rules.InterPhaseEnabled = logical(handles.CB_interPhase.Value);
+handles.rules.TimeInterPhase = str2double(handles.EB_interPhase.String);
+
 handles.rules.PassiveRecoveryEnabled = logical(handles.CB_passiveRecovery.Value);
 handles.rules.TimePassiveRecovery = str2double(handles.EB_passiveRecovery.String);
 
-handles.rules.DelayEnabled = logical(handles.CB_delay.Value);
-handles.rules.TimeDelay = str2double(handles.EB_delay.String);
+handles.rules.InterPulseEnabled = logical(handles.CB_interPulse.Value);
+
 
 %makes edit box editable/uneditable based on state of checkbox
 function ToggleEditBox(hCheckbox, hEdit)
@@ -146,14 +169,14 @@ function PB_ok_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 SaveRules(handles);
-close(handles.mainFig);
+close(handles.SandboxRuleSettings);
 
 % --- Executes on button press in EB_cancel.
 function EB_cancel_Callback(hObject, eventdata, handles)
 % hObject    handle to EB_cancel (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-close(handles.mainFig);
+close(handles.SandboxRuleSettings);
 
 
 % --- Executes on button press in CB_passiveRecovery.
@@ -426,18 +449,18 @@ end
 
 
 
-function edit11_Callback(hObject, eventdata, handles)
-% hObject    handle to edit11 (see GCBO)
+function EB_warmup_Callback(hObject, eventdata, handles)
+% hObject    handle to EB_warmup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit11 as text
-%        str2double(get(hObject,'String')) returns contents of edit11 as a double
+% Hints: get(hObject,'String') returns contents of EB_warmup as text
+%        str2double(get(hObject,'String')) returns contents of EB_warmup as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function edit11_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit11 (see GCBO)
+function EB_warmup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to EB_warmup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -448,13 +471,14 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 
-% --- Executes on button press in checkbox8.
-function checkbox8_Callback(hObject, eventdata, handles)
-% hObject    handle to checkbox8 (see GCBO)
+% --- Executes on button press in CB_warmup.
+function CB_warmup_Callback(hObject, eventdata, handles)
+% hObject    handle to CB_warmup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hint: get(hObject,'Value') returns toggle state of checkbox8
+% Hint: get(hObject,'Value') returns toggle state of CB_warmup
+ToggleEditBox(handles.CB_warmup, handles.EB_warmup);
 
 
 
@@ -490,18 +514,18 @@ function CB_delay_Callback(hObject, eventdata, handles)
 ToggleEditBox(handles.CB_delay, handles.EB_delay);
 
 
-function edit13_Callback(hObject, eventdata, handles)
-% hObject    handle to edit13 (see GCBO)
+function EB_prePulse_Callback(hObject, eventdata, handles)
+% hObject    handle to EB_prePulse (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit13 as text
-%        str2double(get(hObject,'String')) returns contents of edit13 as a double
+% Hints: get(hObject,'String') returns contents of EB_prePulse as text
+%        str2double(get(hObject,'String')) returns contents of EB_prePulse as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function edit13_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit13 (see GCBO)
+function EB_prePulse_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to EB_prePulse (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -512,28 +536,28 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 
-% --- Executes on button press in checkbox10.
-function checkbox10_Callback(hObject, eventdata, handles)
-% hObject    handle to checkbox10 (see GCBO)
+% --- Executes on button press in CB_prePulse.
+function CB_prePulse_Callback(hObject, eventdata, handles)
+% hObject    handle to CB_prePulse (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hint: get(hObject,'Value') returns toggle state of checkbox10
+% Hint: get(hObject,'Value') returns toggle state of CB_prePulse
+ToggleEditBox(handles.CB_prePulse, handles.EB_prePulse);
 
 
-
-function edit14_Callback(hObject, eventdata, handles)
-% hObject    handle to edit14 (see GCBO)
+function EB_interPhase_Callback(hObject, eventdata, handles)
+% hObject    handle to EB_interPhase (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit14 as text
-%        str2double(get(hObject,'String')) returns contents of edit14 as a double
+% Hints: get(hObject,'String') returns contents of EB_interPhase as text
+%        str2double(get(hObject,'String')) returns contents of EB_interPhase as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function edit14_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit14 (see GCBO)
+function EB_interPhase_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to EB_interPhase (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -544,14 +568,14 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 
-% --- Executes on button press in checkbox11.
-function checkbox11_Callback(hObject, eventdata, handles)
-% hObject    handle to checkbox11 (see GCBO)
+% --- Executes on button press in CB_interPhase.
+function CB_interPhase_Callback(hObject, eventdata, handles)
+% hObject    handle to CB_interPhase (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hint: get(hObject,'Value') returns toggle state of checkbox11
-
+% Hint: get(hObject,'Value') returns toggle state of CB_interPhase
+ToggleEditBox(handles.CB_interPhase, handles.EB_interPhase);
 
 % --- Executes on button press in CB_holdOffTime.
 function CB_holdOffTime_Callback(hObject, eventdata, handles)
@@ -560,3 +584,35 @@ function CB_holdOffTime_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of CB_holdOffTime
+
+
+
+function EB_interPulse_Callback(hObject, eventdata, handles)
+% hObject    handle to EB_interPulse (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of EB_interPulse as text
+%        str2double(get(hObject,'String')) returns contents of EB_interPulse as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function EB_interPulse_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to EB_interPulse (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in CB_interPulse.
+function CB_interPulse_Callback(hObject, eventdata, handles)
+% hObject    handle to CB_interPulse (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of CB_interPulse

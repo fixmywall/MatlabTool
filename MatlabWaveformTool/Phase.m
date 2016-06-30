@@ -82,6 +82,14 @@ classdef Phase
             p = Phase(  obj.Type, obj.Amplitude.min, obj.Amplitude.max, obj.Amplitude.stepSize, obj.Width.min, obj.Width.max,...
                         obj.Width.stepSize, obj.AmpType, obj.WidthType, refreshNum);
         end
+        
+        function a = Area(obj)   %returns area in [us * mA]
+            if obj.Type == PhaseTypes.PassiveRecovery
+                a = 0.5 * obj.Amplitude.value * obj.Width.value;
+            else
+                a = obj.Amplitude.value * obj.Width.value;
+            end
+        end
 
     end
     methods(Static)
