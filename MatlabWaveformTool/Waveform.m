@@ -4,7 +4,6 @@ classdef Waveform < handle
     
     properties
         Pulses = Pulse.empty;
-        NumPhases = 0;
         SelectedPulse = [];
         PulseAxes = [];
         WaveformAxes = [];
@@ -19,6 +18,13 @@ classdef Waveform < handle
             w.WaveformAxes = handles.axes_Waveform;
             w.Constraints = handles.constraints;
         end    
+        
+        function n = NumUserPhases(obj)
+            n=0;
+            for i=1:obj.NumPulses()
+                n = n + obj.Pulses(i).NumUserPhases();
+            end
+        end
         
         %creates a new empty pulse, adds to Pulses and sets selectedpulse
         %to it
@@ -40,11 +46,10 @@ classdef Waveform < handle
             
             %if number of phases in the selected pulse exceeds limit,
             %display error and return
-            if num + obj.SelectedPulse.NumPhases > obj.Constraints.MaxUserPhasesPerPulse
+            if num + obj.SelectedPulse.NumUserPhases() > obj.Constraints.MaxUserPhasesPerPulse
                 warningPopUpMenu(Constants.ERROR_TOO_MANY_PHASES);
                 return;
             end
-            obj.NumPhases = obj.NumPhases + num;
             obj.SelectedPulse.GeneratePhases(ampType, widthType, minAmp, maxAmp, ampStep, minWidth, maxWidth, widthStep, num); 
             
             %plot the resulting waveform
@@ -55,7 +60,6 @@ classdef Waveform < handle
             if obj.NumPulses() == 0
                 obj.SelectedPulse = pulse;
             end
-            obj.NumPhases=obj.NumPhases+pulse.NumPhases;
             obj.Pulses(end+1)=pulse;
         end
         
@@ -63,9 +67,7 @@ classdef Waveform < handle
             if obj.NumPulses() == 0
                 obj.SelectedPulse = pulses(1);
             end
-            for i=1:length(pulses)
-                obj.NumPhases=obj.NumPhases+pulses(i).NumPhases;
-            end
+
             obj.Pulses= [obj.Pulses,pulses];
         end       
         
@@ -112,21 +114,20 @@ classdef Waveform < handle
             %get the axes data, and then plot the data onto waveformAxes
             Y = obj.GetAxesData();
             axes(obj.WaveformAxes);
-            plot(Y{1}, Y{2});
+            plot(Y{1}, obj.Scale/100* Y{2});
             obj.PlotSelectedPulse();
         end
         
         function Reset(obj)
             obj.Pulses = Pulse.empty;
             obj.SelectedPulse = [];
-            obj.NumPhases = 0;
         end
         
         function TabulatePulses(obj, hTable)                %tabulates each pulse onto table pointed to be hTable
             hTable.Data = {};
             for i=1:obj.NumPulses()                         %for each pulse
                 currentPulse = obj.Pulses(i);
-                row{1}=currentPulse.NumPhases;
+                row{1}=currentPulse.NumUserPhases();
                 row{2}='NA';
                 row{3}='NA';
                 hTable.Data = [hTable.Data;row];
@@ -144,7 +145,10 @@ classdef Waveform < handle
         end
         
         %used in falcon, makes n duplicates of the pulse
-        function RepeatSelectedPulse(obj, num)
+        function RepeatSelectedPulse(obj, num) 
+            if num < 1
+                num = 1;
+            end
             newPulses = repmat(obj.SelectedPulse, 1, num);
             obj.Reset();
             obj.AddPulses(newPulses);

@@ -118,7 +118,7 @@ switch column
         newAmp = round(eventdata.NewData,2);          %round to the nearest hundredths
         
         handles.pulse.SetPhaseAmplitude(rowNum, newAmp);
-        handles.waveform.PlotWaveform(100);                %re-draw waveform
+        handles.waveform.PlotWaveform();                %re-draw waveform
 
     case handles.cNames.widthValue
         if isnan(eventdata.NewData) || eventdata.NewData < 1

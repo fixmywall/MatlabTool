@@ -3,10 +3,8 @@ classdef Pulse < handle
     %   Detailed explanation goes here
     
     properties
-        Phases = Phase.empty;
-        NumPhases = 0;         
+        Phases = Phase.empty;  
         Period=0;                %The total time spanned by the phases
-        
         Constraints = [];
     end
     
@@ -15,15 +13,17 @@ classdef Pulse < handle
             p.Constraints=constraints;
         end
         
+        function n = NumUserPhases(obj)
+            n = length(obj.Phases);
+        end
+        
         function AddPhase(obj, p)
-            obj.NumPhases = obj.NumPhases+1;
-            obj.Phases(obj.NumPhases)=p;
+            obj.Phases(end+1)=p;
             %add to the Period the width of the phase
             obj.Period=obj.Period+p.Width.value;
         end     
         
         function AddPhases(obj, phases)
-            obj.NumPhases = obj.NumPhases+length(phases);
             obj.Phases = [obj.Phases, phases];
             %add to the Period the width of the phases
             for i=1:length(phases)
@@ -57,14 +57,14 @@ classdef Pulse < handle
             end
             
             %add the interphase delay between each user-set phase
-            if obj.NumPhases == 0
+            if obj.NumUserPhases() == 0
                 userPhases = [];
             else
                 if obj.Constraints.InterPhaseEnabled
-                    userPhases = repmat(Phase([],[],[],[],[],[],[],PhaseTypes.Fixed, PhaseTypes.Fixed), 1,obj.NumPhases*2-1);
-                    for i = 1:obj.NumPhases
-                        if i == obj.NumPhases
-                            userPhases(end) = obj.Phases(obj.NumPhases);
+                    userPhases = repmat(Phase([],[],[],[],[],[],[],PhaseTypes.Fixed, PhaseTypes.Fixed), 1,obj.NumUserPhases()*2-1);
+                    for i = 1:obj.NumUserPhases()
+                        if i == obj.NumUserPhases()
+                            userPhases(end) = obj.Phases(obj.NumUserPhases());
                         else
                             userPhases(2*i - 1) = obj.Phases(i);
                             userPhases(2*i) = Phase.StaticPhase(0,obj.Constraints.TimeInterPhase);
@@ -111,8 +111,9 @@ classdef Pulse < handle
             y=cell(1,length(allPhases));
             start = startTime;
             for i=1:length(allPhases)
-                t{i} = allPhases(i).GenerateDomain(start);
-                y{i} = allPhases(i).GenerateArrays();
+                phaseAxes = allPhases(i).GenerateArrays(start);
+                t{i} = phaseAxes{1};
+                y{i} = phaseAxes{2};
                 start = start+allPhases(i).Width.value;
             end
             Y{1}=cell2mat(t);
@@ -126,29 +127,29 @@ classdef Pulse < handle
             %scale the range by yScale
             Y{2}= yScale/100 *Y{2};
             %plot the pulse
-            axes(axesHandle);    
+            axes(axesHandle);
             plot(Y{1},Y{2});
         end
         
         %refresh num is the pulse after it is refreshed num times
         function p = refreshPulse(obj, refreshNum)
             p = Pulse(obj.Constraints);
-            refreshedPhases = repmat(Phase([],[],[],[],[],[],[],PhaseTypes.Fixed, PhaseTypes.Fixed, []), 1,obj.NumPhases);
-            for i=1:obj.NumPhases
+            refreshedPhases = repmat(Phase([],[],[],[],[],[],[],PhaseTypes.Fixed, PhaseTypes.Fixed, []), 1,obj.NumUserPhases());
+            for i=1:obj.NumUserPhases()
                 refreshedPhases(i)= obj.Phases(i).RefreshPhase(refreshNum);
             end
             p.AddPhases(refreshedPhases);
         end
         
         function SetPhaseAmplitude(obj, i, newAmp)       %changes the amplitude of the phase indexed by i
-            if (i<1) || (i>obj.NumPhases)
+            if (i<1) || (i>obj.NumUserPhases())
                 return;
             end
             obj.Phases(i).Amplitude.value = newAmp;
         end
         
         function SetPhaseWidth(obj, i, newWidth)         %changes the width of the phase indexed by i
-            if (i<1) || (i>obj.NumPhases)
+            if (i<1) || (i>obj.NumUserPhases())
                 return;
             end
             diff = newWidth - obj.Phases(i).Width.value;
@@ -157,7 +158,7 @@ classdef Pulse < handle
         end
         
         function Tabulate(obj, hTable)              %tabulates the attributes of each phase carried by the pulse
-            for i=1:obj.NumPhases
+            for i=1:obj.NumUserPhases()
                 currentPhase=obj.Phases(i);
                 row{1}=currentPhase.Amplitude.value;
                 row{2}=currentPhase.Width.value;

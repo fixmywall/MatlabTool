@@ -66,11 +66,16 @@ classdef Phase
         
         %generates a 'refreshed' phase array for the next pulse, takes into
         %account stochastic/ramping properties. 
-        function y = GenerateArrays(obj)
+        function Y = GenerateArrays(obj, startTime)
             if obj.Type == PhaseTypes.PassiveRecovery
-                y = [obj.Amplitude.value, 0];   %placeholder, eventually we need exp function
+                Y{1} = linspace(startTime, startTime + obj.Width.value, 100);
+                
+                newT = Y{1}-startTime;
+                Y{2} = obj.Amplitude.value * exp(-(Y{1}-startTime)* 7 / obj.Width.value);
+                
             else
-                y = [obj.Amplitude.value, obj.Amplitude.value];
+                Y{1} = [startTime, startTime+obj.Width.value];
+                Y{2} = [obj.Amplitude.value, obj.Amplitude.value];
             end
         end
         
