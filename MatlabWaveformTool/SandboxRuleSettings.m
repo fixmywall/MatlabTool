@@ -22,7 +22,7 @@ function varargout = SandboxRuleSettings(varargin)
 
 % Edit the above text to modify the response to help SandboxRuleSettings
 
-% Last Modified by GUIDE v2.5 30-Jun-2016 13:38:31
+% Last Modified by GUIDE v2.5 11-Jul-2016 15:34:18
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -46,21 +46,25 @@ end
 
 %initializes the GUI objects based on the current programming rules
 %(handles.rules)
+%i is selected channel index
 function InitializeObjects(handles)
+channel = handles.channels(handles.selectedChannel);
+rules   = channel.Constraints;
 %initialize checkboxes
-handles.CB_delay.Value = handles.rules.DelayEnabled;
-handles.CB_warmup.Value = handles.rules.WarmupEnabled;
-handles.CB_prePulse.Value = handles.rules.PrePulseEnabled;
-handles.CB_interPhase.Value = handles.rules.InterPhaseEnabled;
-handles.CB_passiveRecovery.Value = handles.rules.PassiveRecoveryEnabled;
-handles.CB_interPulse.Value = handles.rules.InterPulseEnabled;
+handles.CB_enableChannel.Value      = channel.Enabled;
+handles.CB_delay.Value              = rules.DelayEnabled;
+handles.CB_warmup.Value             = rules.WarmupEnabled;
+handles.CB_prePulse.Value           = rules.PrePulseEnabled;
+handles.CB_interPhase.Value         = rules.InterPhaseEnabled;
+handles.CB_passiveRecovery.Value    = rules.PassiveRecoveryEnabled;
+handles.CB_interPulse.Value         = rules.InterPulseEnabled;
 
 %initialize edit boxes
-handles.EB_delay.String = num2str(handles.rules.TimeDelay);
-handles.EB_warmup.String = num2str(handles.rules.TimeWarmup);
-handles.EB_prePulse.String = num2str(handles.rules.TimePrePulse);
-handles.EB_interPhase.String = num2str(handles.rules.TimeInterPhase);
-handles.EB_passiveRecovery.String = num2str(handles.rules.TimePassiveRecovery);
+handles.EB_delay.String             = num2str(rules.TimeDelay);
+handles.EB_warmup.String            = num2str(rules.TimeWarmup);
+handles.EB_prePulse.String          = num2str(rules.TimePrePulse);
+handles.EB_interPhase.String        = num2str(rules.TimeInterPhase);
+handles.EB_passiveRecovery.String   = num2str(rules.TimePassiveRecovery);
 
 %toggle all edit boxes
 ToggleEditBox(handles.CB_warmup, handles.EB_warmup);
@@ -80,9 +84,12 @@ function SandboxRuleSettings_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for SandboxRuleSettings
 handles.output = hObject;
-handles.rules = varargin{1};  %constraints handle passed from the main GUI
-InitializeObjects(handles);
+handles.channels = varargin{1};
+handles.selectedChannel = varargin{2};
+handles.POP_channel.Value = handles.selectedChannel;
 
+%initializes UI components based on selected channel
+InitializeObjects(handles);
 
 % Update handles structure
 guidata(hObject, handles);
@@ -134,32 +141,35 @@ function radiobutton2_Callback(hObject, eventdata, handles)
 
 
 %saves the state of GUI elements into the constraints (rules) object
-function SaveRules(handles)
-handles.rules.DelayEnabled = logical(handles.CB_delay.Value);
-handles.rules.TimeDelay = str2double(handles.EB_delay.String);
+%returns true if there is no issue, otherwise false
+function SaveSettings(handles)
+%update the channel rules
+rules = handles.channels(handles.selectedChannel).Constraints;
+rules.DelayEnabled = logical(handles.CB_delay.Value);
+rules.TimeDelay = str2double(handles.EB_delay.String);
+rules.WarmupEnabled = logical(handles.CB_warmup.Value);
+rules.TimeWarmup = str2double(handles.EB_warmup.String);
+rules.PrePulseEnabled = logical(handles.CB_prePulse.Value);
+rules.TimePrePulse = str2double(handles.EB_prePulse.String);
+rules.InterPhaseEnabled = logical(handles.CB_interPhase.Value);
+rules.TimeInterPhase = str2double(handles.EB_interPhase.String);
+rules.PassiveRecoveryEnabled = logical(handles.CB_passiveRecovery.Value);
+rules.TimePassiveRecovery = str2double(handles.EB_passiveRecovery.String);
+rules.InterPulseEnabled = logical(handles.CB_interPulse.Value);
 
-handles.rules.WarmupEnabled = logical(handles.CB_warmup.Value);
-handles.rules.TimeWarmup = str2double(handles.EB_warmup.String);
-
-handles.rules.PrePulseEnabled = logical(handles.CB_prePulse.Value);
-handles.rules.TimePrePulse = str2double(handles.EB_prePulse.String);
-
-handles.rules.InterPhaseEnabled = logical(handles.CB_interPhase.Value);
-handles.rules.TimeInterPhase = str2double(handles.EB_interPhase.String);
-
-handles.rules.PassiveRecoveryEnabled = logical(handles.CB_passiveRecovery.Value);
-handles.rules.TimePassiveRecovery = str2double(handles.EB_passiveRecovery.String);
-
-handles.rules.InterPulseEnabled = logical(handles.CB_interPulse.Value);
+%channel enabled settings
+handles.channels(handles.selectedChannel).Enabled = handles.CB_enableChannel.Value;
 
 
 %makes edit box editable/uneditable based on state of checkbox
-function ToggleEditBox(hCheckbox, hEdit)
-if hCheckbox.Value
-    hEdit.Enable = 'on';
-else
-    hEdit.String = '0';
-    hEdit.Enable = 'off';
+function ToggleEditBox(hCheckbox, hEdits)
+for hEdit = hEdits
+    if hCheckbox.Value
+        hEdit.Enable = 'on';
+    else
+        hEdit.String = '0';
+        hEdit.Enable = 'off';
+    end
 end
 
 
@@ -168,8 +178,9 @@ function PB_ok_Callback(hObject, eventdata, handles)
 % hObject    handle to PB_ok (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-SaveRules(handles);
+SaveSettings(handles);
 close(handles.SandboxRuleSettings);
+
 
 % --- Executes on button press in EB_cancel.
 function EB_cancel_Callback(hObject, eventdata, handles)
@@ -203,227 +214,6 @@ function checkbox2_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of checkbox2
-
-
-% --- Executes on button press in CB_timingOne.
-function CB_timingOne_Callback(hObject, eventdata, handles)
-% hObject    handle to CB_timingOne (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of CB_timingOne
-
-
-% --- Executes on button press in CB_timingTwo.
-function CB_timingTwo_Callback(hObject, eventdata, handles)
-% hObject    handle to CB_timingTwo (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of CB_timingTwo
-
-
-% --- Executes on button press in CB_timingThree.
-function CB_timingThree_Callback(hObject, eventdata, handles)
-% hObject    handle to CB_timingThree (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of CB_timingThree
-
-
-% --- Executes on button press in CB_timingFour.
-function CB_timingFour_Callback(hObject, eventdata, handles)
-% hObject    handle to CB_timingFour (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of CB_timingFour
-
-
-
-function edit2_Callback(hObject, eventdata, handles)
-% hObject    handle to edit2 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of edit2 as text
-%        str2double(get(hObject,'String')) returns contents of edit2 as a double
-
-
-% --- Executes during object creation, after setting all properties.
-function edit2_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit2 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-
-function edit3_Callback(hObject, eventdata, handles)
-% hObject    handle to edit3 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of edit3 as text
-%        str2double(get(hObject,'String')) returns contents of edit3 as a double
-
-
-% --- Executes during object creation, after setting all properties.
-function edit3_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit3 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-
-function edit4_Callback(hObject, eventdata, handles)
-% hObject    handle to edit4 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of edit4 as text
-%        str2double(get(hObject,'String')) returns contents of edit4 as a double
-
-
-% --- Executes during object creation, after setting all properties.
-function edit4_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit4 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-
-function edit5_Callback(hObject, eventdata, handles)
-% hObject    handle to edit5 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of edit5 as text
-%        str2double(get(hObject,'String')) returns contents of edit5 as a double
-
-
-% --- Executes during object creation, after setting all properties.
-function edit5_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit5 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-
-function edit6_Callback(hObject, eventdata, handles)
-% hObject    handle to edit6 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of edit6 as text
-%        str2double(get(hObject,'String')) returns contents of edit6 as a double
-
-
-% --- Executes during object creation, after setting all properties.
-function edit6_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit6 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-
-function edit7_Callback(hObject, eventdata, handles)
-% hObject    handle to edit7 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of edit7 as text
-%        str2double(get(hObject,'String')) returns contents of edit7 as a double
-
-
-% --- Executes during object creation, after setting all properties.
-function edit7_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit7 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-
-function edit8_Callback(hObject, eventdata, handles)
-% hObject    handle to edit8 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of edit8 as text
-%        str2double(get(hObject,'String')) returns contents of edit8 as a double
-
-
-% --- Executes during object creation, after setting all properties.
-function edit8_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit8 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-
-function edit9_Callback(hObject, eventdata, handles)
-% hObject    handle to edit9 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of edit9 as text
-%        str2double(get(hObject,'String')) returns contents of edit9 as a double
-
-
-% --- Executes during object creation, after setting all properties.
-function edit9_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit9 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
 
 
 function EB_holdOffTime_Callback(hObject, eventdata, handles)
@@ -616,3 +406,83 @@ function CB_interPulse_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of CB_interPulse
+
+
+% --- Executes on selection change in POP_channel.
+function POP_channel_Callback(hObject, eventdata, handles)
+% hObject    handle to POP_channel (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns POP_channel contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from POP_channel
+handles.selectedChannel = hObject.Value;
+InitializeObjects(handles);
+guidata(hObject, handles);
+
+% --- Executes during object creation, after setting all properties.
+function POP_channel_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to POP_channel (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in CB_enableChannel.
+function CB_enableChannel_Callback(hObject, eventdata, handles)
+% hObject    handle to CB_enableChannel (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of CB_enableChannel
+
+
+
+function EB_minAmp_Callback(hObject, eventdata, handles)
+% hObject    handle to EB_minAmp (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of EB_minAmp as text
+%        str2double(get(hObject,'String')) returns contents of EB_minAmp as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function EB_minAmp_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to EB_minAmp (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function EB_maxAmp_Callback(hObject, eventdata, handles)
+% hObject    handle to EB_maxAmp (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of EB_maxAmp as text
+%        str2double(get(hObject,'String')) returns contents of EB_maxAmp as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function EB_maxAmp_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to EB_maxAmp (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end

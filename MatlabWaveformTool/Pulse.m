@@ -87,8 +87,9 @@ classdef Pulse < handle
                     area = area + userPhases(i).Area();
                 end
                 %from the area and width of PR, calculate its starting
-                %point
-                startPoint = Pulse.ComputePassiveRecoveryHeight(area, obj.Constraints.TimePassiveRecovery);
+                %point 
+                
+                startPoint = obj.ComputePassiveRecoveryHeight(area);
                 postPhases = [postPhases, Phase.PassiveRecovery(startPoint, obj.Constraints.TimePassiveRecovery)];
             end
             
@@ -181,11 +182,20 @@ classdef Pulse < handle
                 hTable.Data = [hTable.Data;row];
             end
         end     
-    end
-    methods(Static)
+    
+   
         %in future: account for exponential passive recovery
-        function h = ComputePassiveRecoveryHeight(area, width)
-            h = -2*area / width;
+        function h = ComputePassiveRecoveryHeight(obj, area)
+            width = obj.Constraints.TimePassiveRecovery;
+            if area > 0
+                h = -2*area / width;
+            else
+                switch obj.Constraints.Mode
+                    case Constants.MODE_FALCON
+                        h = 0.1 * rand() * obj.Phases(1).Amplitude.value;
+                end
+            end
+
         end
     end
 end

@@ -1,4 +1,4 @@
-classdef Phase  
+classdef Phase < handle
     properties
         %amplitude units are mA
         Amplitude = struct( 'min', [], ... 

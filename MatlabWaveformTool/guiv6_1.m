@@ -22,7 +22,7 @@ function varargout = guiv6_1(varargin)
 
 % Edit the above text to modify the response to help guiv6_1
 
-% Last Modified by GUIDE v2.5 30-Jun-2016 16:07:59
+% Last Modified by GUIDE v2.5 11-Jul-2016 16:56:20
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -54,10 +54,8 @@ function guiv6_1_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for guiv6_1
 handles.output = hObject;
-defaultMode = handles.POP_modeSelect.String{handles.POP_modeSelect.Value};
-handles.constraints = Constraints(defaultMode);
-UpdateMode(handles, defaultMode);
-handles.waveform = Waveform(handles);      %represents a collection of pulse objects
+handles.mode = handles.POP_modeSelect.String{handles.POP_modeSelect.Value};
+      %represents a collection of pulse objects
 
 %update the electrode group box with array of all electrode edit boxes
 handles.PANEL_electrodesPolarity.UserData = ...
@@ -72,7 +70,8 @@ handles.PANEL_electrodesPolarity.UserData = ...
     
 % Update handles structure
 guidata(hObject, handles);
-
+handles = SwitchMode(handles);
+guidata(hObject, handles);
 % UIWAIT makes guiv6_1 wait for user response (see UIRESUME)
 % uiwait(handles.mainFig);
 
@@ -1112,7 +1111,7 @@ end
     %handles.waveform.AddPhase(Phase(-ampVal, minAmp, maxAmp, ampStep, widthVal, minWidth, maxWidth, widthStep, ampType, widthType));
 %end
 
-handles.waveform.GeneratePhases(ampType, widthType, minAmp, maxAmp, ampStep, minWidth, maxWidth, widthStep, iterations);
+handles.channels(handles.selectedChannel).GeneratePhases(ampType, widthType, minAmp, maxAmp, ampStep, minWidth, maxWidth, widthStep, iterations);
 
 
 function EB_numPhases_Callback(hObject, eventdata, handles)
@@ -2046,8 +2045,9 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 
+%clears only selected channel
 function ClearData(handles)
-handles.waveform = Waveform(handles);      %clears waveform object
+handles.channels(handles.selectedChannel) = Waveform(handles);
 cla(handles.axes_Pulse, 'reset');
 cla(handles.axes_Waveform, 'reset');
 guidata(handles.mainFig, handles);
@@ -2117,8 +2117,8 @@ if isnan(num)
     num=0;
 end
 
-handles.waveform.RefreshPulse(num);
-handles.waveform.PlotWaveform();
+handles.channels(handles.selectedChannel).RefreshPulse(num);
+handles.channels(handles.selectedChannel).PlotWaveform();
 
 
 % --- Executes on button press in PB_PulseEditor.
@@ -2127,7 +2127,7 @@ function PB_PulseEditor_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-PulseEditor(handles.waveform);      %pass the waveform handle to Pulse Editor
+PulseEditor(handles.channels(handles.selectedChannel));      %pass the waveform handle to Pulse Editor
 
 function EB_ForceInteger(hEdit)
 if isnan(str2double(hEdit.String))
@@ -2145,36 +2145,51 @@ else
     isInt = true;
 end
 
-%UpdateMode: updates the waveform and GUI elements whenever the mode is switched
-function UpdateMode(handles, mode)
-handles.constraints.Update(mode);
+function C = newChannels(handles, mode)
+C = repmat(Waveform(handles, mode),1, Constants.DEFAULT_CHANNEL_NUM);
+for i=1:Constants.DEFAULT_CHANNEL_NUM
+    C(i) = Waveform(handles, mode);
+end
 
-%clear the waveform object
-handles.waveform = Waveform(handles);
+%UpdateMode: updates the waveform and GUI elements whenever the mode is switched
+function outHandles = SwitchMode(handles)
+%clear the channels
+handles.channels = newChannels(handles, handles.mode);
+handles.selectedChannel = 1;
+
+%populate the channel popup menu
+UpdateChannelPopupMenu(handles.POP_channelSelect, handles.channels);
+
 cla(handles.axes_Pulse, 'reset');
 cla(handles.axes_Waveform, 'reset');
 
-switch mode
+%toggel UI elements
+
+switch handles.mode
     case Constants.MODE_FALCON
         %update GUI
         handles.PANEL_phaseSetup.Visible = 'off';
         handles.PANEL_falconPulseSetup.Visible = 'on';
-        handles.EB_falconPhaseOneAmp.String = num2str(Constants.FALCON_DEFAULT_AMP(1));
-        handles.EB_falconPhaseTwoAmp.String = num2str(Constants.FALCON_DEFAULT_AMP(2));
-        handles.EB_falconPhaseOneWidth.String = num2str(Constants.FALCON_DEFAULT_WIDTH(1));
-        handles.EB_falconPhaseTwoWidth.String = num2str(Constants.FALCON_DEFAULT_WIDTH(2));
+        handles.EB_falconPhaseOneAmp.String = num2str(-Constants.FALCON_DEFAULT_AMP);
+        handles.EB_falconPhaseTwoAmp.String = num2str(Constants.FALCON_DEFAULT_AMP);
+        handles.EB_falconPhaseOneWidth.String = num2str(Constants.FALCON_DEFAULT_WIDTH);
+        handles.EB_falconPhaseTwoWidth.String = num2str(Constants.FALCON_DEFAULT_WIDTH);
         %generate the two default phases
-        handles.waveform.GeneratePhases(PhaseTypes.Fixed, PhaseTypes.Fixed, Constants.FALCON_DEFAULT_AMP(1), Constants.FALCON_DEFAULT_AMP(1), ...
-                                        0, Constants.FALCON_DEFAULT_WIDTH(1), Constants.FALCON_DEFAULT_WIDTH(1), 0, 1 );
-        handles.waveform.GeneratePhases(PhaseTypes.Fixed, PhaseTypes.Fixed, Constants.FALCON_DEFAULT_AMP(2), Constants.FALCON_DEFAULT_AMP(2), ...
-                                        0, Constants.FALCON_DEFAULT_WIDTH(2), Constants.FALCON_DEFAULT_WIDTH(2), 0, 1 );
-                                    
+        
+        for i=1:length(handles.channels)
+            handles.channels(i).GeneratePhases(PhaseTypes.Fixed, PhaseTypes.Fixed, -Constants.FALCON_DEFAULT_AMP, -Constants.FALCON_DEFAULT_AMP, ...
+                                            0, Constants.FALCON_DEFAULT_WIDTH, Constants.FALCON_DEFAULT_WIDTH, 0, 1 );
+            handles.channels(i).GeneratePhases(PhaseTypes.Fixed, PhaseTypes.Fixed, Constants.FALCON_DEFAULT_AMP, Constants.FALCON_DEFAULT_AMP, ...
+                                            0, Constants.FALCON_DEFAULT_WIDTH, Constants.FALCON_DEFAULT_WIDTH, 0, 1 );
+        end
+        
     case Constants.MODE_SANDBOX
         handles.PANEL_falconPulseSetup.Visible = 'off';
         handles.PANEL_phaseSetup.Visible = 'on';   
 end
 
-guidata(handles.mainFig, handles);
+LoadChannel(handles);
+outHandles = handles;
 
 
 
@@ -2186,8 +2201,9 @@ function POP_modeSelect_Callback(hObject, eventdata, handles)
 
 % Hints: contents = cellstr(get(hObject,'String')) returns POP_modeSelect contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from POP_modeSelect
-mode = hObject.String{hObject.Value};
-UpdateMode(handles, mode);
+handles.mode = hObject.String{hObject.Value};
+handles = SwitchMode(handles);
+guidata(hObject, handles);
 
 
 % --- Executes during object creation, after setting all properties.
@@ -2243,8 +2259,8 @@ else    %otherwise, get scaling coefficient
     coefficient = str2double(handles.PANEL_electrodesPolarity.UserData(str2double(electrodeIndex)).String);
     
 end
-handles.waveform.Scale = coefficient;
-handles.waveform.PlotWaveform();
+handles.channels(handles.selectedChannel).Scale = coefficient;
+handles.channels(handles.selectedChannel).PlotWaveform();
 
 
 % --- Executes on button press in PB_falconUpdatePhase.
@@ -2252,60 +2268,16 @@ function PB_falconUpdatePhase_Callback(hObject, eventdata, handles)
 % hObject    handle to PB_falconUpdatePhase (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-amp1 = str2double(handles.EB_falconPhaseOneAmp.String);
-width1 = str2double(handles.EB_falconPhaseOneWidth.String);
-amp2 = str2double(handles.EB_falconPhaseTwoAmp.String);
-width2 = str2double(handles.EB_falconPhaseTwoWidth.String);
-
-handles.waveform.SetPhaseAmplitude(1, amp1);
-handles.waveform.SetPhaseWidth(1, width1);
-handles.waveform.SetPhaseAmplitude(2, amp2);
-handles.waveform.SetPhaseWidth(2, width2);
-handles.waveform.PlotWaveform();
-
-function EB_falconPhaseTwoAmp_Callback(hObject, eventdata, handles)
-% hObject    handle to EB_falconPhaseTwoAmp (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of EB_falconPhaseTwoAmp as text
-%        str2double(get(hObject,'String')) returns contents of EB_falconPhaseTwoAmp as a double
+amp = str2double(handles.EB_falconPhaseOneAmp.String);
+width = str2double(handles.EB_falconPhaseOneWidth.String);
 
 
-% --- Executes during object creation, after setting all properties.
-function EB_falconPhaseTwoAmp_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to EB_falconPhaseTwoAmp (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
+handles.channels(handles.selectedChannel).SetPhaseAmplitude(1, amp);
+handles.channels(handles.selectedChannel).SetPhaseWidth(1, width);
+handles.channels(handles.selectedChannel).SetPhaseAmplitude(2, amp);
+handles.channels(handles.selectedChannel).SetPhaseWidth(2, width);
+handles.channels(handles.selectedChannel).PlotWaveform();
 
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-
-function EB_falconPhaseTwoWidth_Callback(hObject, eventdata, handles)
-% hObject    handle to EB_falconPhaseTwoWidth (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of EB_falconPhaseTwoWidth as text
-%        str2double(get(hObject,'String')) returns contents of EB_falconPhaseTwoWidth as a double
-
-
-% --- Executes during object creation, after setting all properties.
-function EB_falconPhaseTwoWidth_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to EB_falconPhaseTwoWidth (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
 
 
 
@@ -2383,13 +2355,21 @@ function pushbutton15_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+function outHandles = OpenSettings(handles)
+h = SandboxRuleSettings(handles.channels, handles.selectedChannel);
+uiwait(h);      %wait for the settings UI to close
+handles.channels(handles.selectedChannel).PlotWaveform();
+handles.selectedChannel = str2double(handles.POP_channelSelect.String{handles.POP_channelSelect.Value});
+outHandles = handles;
+
 
 % --- Executes on button press in PB_sandboxSettings.
 function PB_sandboxSettings_Callback(hObject, eventdata, handles)
 % hObject    handle to PB_sandboxSettings (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-SandboxRuleSettings(handles.constraints);
+handles = OpenSettings(handles);
+guidata(hObject, handles);
 
 
 
@@ -2420,10 +2400,8 @@ function PB_falconSettings_Callback(hObject, eventdata, handles)
 % hObject    handle to PB_falconSettings (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-hSettings = SandboxRuleSettings(handles.constraints);
-uiwait(hSettings);
-handles.waveform.PlotWaveform();
-
+handles = OpenSettings(handles);
+guidata(hObject, handles);
 
 
 function EB_falconNumPulses_Callback(hObject, eventdata, handles)
@@ -2455,5 +2433,68 @@ function PB_falconNumPulsesApply_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 strval = handles.EB_falconNumPulses.String;
 if StringIsInteger(strval)
-    handles.waveform.RepeatSelectedPulse(str2double(strval));
+    handles.channels(handles.selectedChannel).RepeatSelectedPulse(str2double(strval));
 end
+
+
+% --- Executes on selection change in POP_channelSelect.
+function POP_channelSelect_Callback(hObject, eventdata, handles)
+% hObject    handle to POP_channelSelect (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns POP_channelSelect contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from POP_channelSelect
+handles.selectedChannel = str2double(hObject.String{hObject.Value});
+LoadChannel(handles);
+guidata(hObject, handles);
+
+%loads the selected channel in handles into the GUI
+function LoadChannel(handles)
+channel = handles.channels(handles.selectedChannel);
+channel.PlotWaveform();
+handles.CB_channelEnabled.Value = channel.Enabled;
+
+
+%called on startup and when user switches modes
+function UpdateChannelPopupMenu(hPop, channels)
+hPop.String = {};
+for i=1:length(channels)
+    hPop.String{i} = num2str(i);
+end
+
+
+% --- Executes during object creation, after setting all properties.
+function POP_channelSelect_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to POP_channelSelect (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in pushbutton19.
+function pushbutton19_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton19 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in pushbutton20.
+function pushbutton20_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton20 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in CB_channelEnabled.
+function CB_channelEnabled_Callback(hObject, eventdata, handles)
+% hObject    handle to CB_channelEnabled (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of CB_channelEnabled

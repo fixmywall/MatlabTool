@@ -1,9 +1,12 @@
 classdef Constraints < handle
     %CONSTRAINTS List of constraints determined by the current mode
     %all units are in us and mA unless otherwise noted
-    properties    
+    properties
+        Mode = [];
+        MaxChannels = 4;
         MaxUserPhasesPerPulse = [];
         MaxElectrodes = [];
+        MaxAmplitude = [];
         
         MaxRate = [];       %Hz
         MinRate = [];       %Hz
@@ -43,12 +46,15 @@ classdef Constraints < handle
         end
         
         function Update(obj, mode)      %update programming rules for mode
+            obj.Mode = mode;
             switch mode
                 %need to know all of the programming rules before adding to
                 %this section
                 case Constants.MODE_SANDBOX
                     obj.MaxUserPhasesPerPulse = 10000;
                     obj.MaxElectrodes = 32;
+                    obj.MaxAmplitude = 500;
+                    obj.MaxChannels = 4;
                     obj.DelayEnabled = false;
                     obj.TimeDelay = 0;
                     obj.WarmupEnabled = false;
@@ -64,6 +70,8 @@ classdef Constraints < handle
                 case Constants.MODE_FALCON
                     obj.MaxUserPhasesPerPulse = 2;
                     obj.MaxElectrodes = 32;
+                    obj.MaxAmplitude = 25.5;
+                    obj.MaxChannels = 4;
                     obj.DelayEnabled = true;
                     obj.TimeDelay = 0;
                     obj.WarmupEnabled = true;

@@ -20,7 +20,10 @@ classdef Constants
         MODE_WILSON_2 = 'Wilson-2';
         
         %falcon defaults
-        FALCON_DEFAULT_AMP = [12,22];
-        FALCON_DEFAULT_WIDTH = [900,700];
+        FALCON_DEFAULT_AMP = 16;
+        FALCON_DEFAULT_WIDTH = 900;
+        
+        %global defaults
+        DEFAULT_CHANNEL_NUM = 4;
     end
 end

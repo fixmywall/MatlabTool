@@ -1,6 +1,6 @@
 classdef Waveform < handle
-    %WAVEFORM Summary of this class goes here
-    %   Detailed explanation goes here
+    %WAVEFORM represents a single timing channel
+    %   
     
     properties
         Pulses = Pulse.empty;
@@ -10,13 +10,21 @@ classdef Waveform < handle
         Scale = 100;        %represents percent from -100 to 100
         
         Constraints = [];
+        
+        %each channel has its own min/max amplitude
+        Active = true;
+        Enabled = true;
+        MinAmp = [];
+        MaxAmp = [];
     end
     
     methods  
-        function w = Waveform(handles)
+        function w = Waveform(handles, mode)
+            w.Constraints = Constraints(mode);
             w.PulseAxes = handles.axes_Pulse;
             w.WaveformAxes = handles.axes_Waveform;
-            w.Constraints = handles.constraints;
+            w.MinAmp = 0;
+            w.MaxAmp = w.Constraints.MaxAmplitude;
         end    
         
         function n = NumUserPhases(obj)
@@ -51,9 +59,7 @@ classdef Waveform < handle
                 return;
             end
             obj.SelectedPulse.GeneratePhases(ampType, widthType, minAmp, maxAmp, ampStep, minWidth, maxWidth, widthStep, num); 
-            
-            %plot the resulting waveform
-            obj.PlotWaveform();
+           
         end
         
         function AddPulse(obj, pulse)
@@ -115,7 +121,10 @@ classdef Waveform < handle
             Y = obj.GetAxesData();
             axes(obj.WaveformAxes);
             plot(Y{1}, obj.Scale/100* Y{2});
-            obj.PlotSelectedPulse();
+            
+            if ~isempty(obj.SelectedPulse)
+                obj.PlotSelectedPulse();
+            end
         end
         
         function Reset(obj)
