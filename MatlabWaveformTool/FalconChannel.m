@@ -15,16 +15,17 @@ methods
         obj.GeneratePhases();
     end
     
+    
     function GeneratePhases(obj)
-        p1 = Phase(PhaseTypes.RectConfigurable, -obj.GlobalAmp, -obj.GlobalAmp, 0, obj.GlobalWidth, obj.GlobalWidth, 0, PhaseTypes.Fixed, PhaseTypes.Fixed, 0);
-        
-        if obj.Active
-            p2 = Phase(PhaseTypes.RectConfigurable, obj.GlobalAmp, obj.GlobalAmp, 0, obj.GlobalWidth, obj.GlobalWidth, 0, PhaseTypes.Fixed, PhaseTypes.Fixed, 0);
-        else
-            p2 = Phase(PhaseTypes.RectConfigurable, 0, 0, 0, 0, 0, 0, PhaseTypes.Fixed, PhaseTypes.Fixed, 0);
-        end
-        obj.Phases = [p1, p2];
+        obj.Pulse.GenerateFalconPhases(obj.GlobalAmp, obj.GlobalWidth, obj.Active);
         obj.PlotWaveform();
+    end
+end
+
+methods(Static)
+    function obj = DefaultChannel(handles)
+        obj = FalconChannel(handles, Constants.FALCON_DEFAULT_AMP, Constants.FALCON_DEFAULT_WIDTH);
+        obj.Pulse.Frequency = Constants.FALCON_DEFAULT_RATE;
     end
 end
 

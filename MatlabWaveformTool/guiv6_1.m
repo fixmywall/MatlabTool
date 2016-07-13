@@ -22,7 +22,7 @@ function varargout = guiv6_1(varargin)
 
 % Edit the above text to modify the response to help guiv6_1
 
-% Last Modified by GUIDE v2.5 12-Jul-2016 16:28:42
+% Last Modified by GUIDE v2.5 13-Jul-2016 14:31:32
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -1316,13 +1316,6 @@ else
 %error
 warningPopUpMenu(Constants.INVALID_NUMBER_ERROR);
 end
-
-function ElectrodeSumTooHigh()
-sumPos=0;
-sumNeg=0;
-for i=1:32
-    
-end
     
     
 function EB_electrode_1_Callback(hObject, eventdata, handles)
@@ -2156,7 +2149,7 @@ C = cell(1, Constants.DEFAULT_CHANNEL_NUM);
 switch mode
     case Constants.MODE_FALCON
         for i=1:Constants.DEFAULT_CHANNEL_NUM
-            C{i} = FalconChannel(handles, Constants.FALCON_DEFAULT_AMP, Constants.FALCON_DEFAULT_WIDTH);
+            C{i} = FalconChannel.DefaultChannel(handles);
         end
     case Constants.MODE_SANDBOX
         for i=1:Constants.DEFAULT_CHANNEL_NUM
@@ -2181,8 +2174,7 @@ UpdateChannelPopupMenu(handles.POP_channelSelect, handles.channels);
 cla(handles.axes_Pulse, 'reset');
 cla(handles.axes_Waveform, 'reset');
 
-%toggel UI elements
-
+%toggle UI elements
 switch handles.mode
     case Constants.MODE_FALCON
         %update GUI
@@ -2258,17 +2250,6 @@ function PB_plotElectrodeWaveform_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-%get index of electrode
-electrodeIndex = handles.POP_electrodes.String{handles.POP_electrodes.Value};
-%if all, then we plot the overall output waveform
-if strcmp(electrodeIndex, 'All')
-    coefficient=100;
-else    %otherwise, get scaling coefficient
-    coefficient = str2double(handles.PANEL_electrodesPolarity.UserData(str2double(electrodeIndex)).String);
-    
-end
-SelectedChannel(handles).Scale = coefficient;
-SelectedChannel(handles).PlotWaveform();
 
 
 % --- Executes on button press in PB_falconUpdatePhase.
@@ -2278,11 +2259,18 @@ function PB_falconUpdatePhase_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 channel = SelectedChannel(handles);
 
+%check for inconsistencies
+if ~CheckElectrodeFractions(handles.PANEL_electrodesPolarity.UserData)
+    warningPopUpMenu('Invalid electrode fractions');
+    return;
+end
+
+
 channel.GlobalAmp = str2double(handles.EB_falconPhaseOneAmp.String);
 channel.GlobalWidth = str2double(handles.EB_falconPhaseOneWidth.String);
-channel.SetPeriod(str2double(handles.EB_pulseRate.String));
+channel.Pulse.Frequency = str2double(handles.EB_pulseRate.String);
 channel.Enabled = handles.CB_channelEnabled.Value;
-channel.Active = handles.CB_channelActive.Value;
+channel.Active = handles.CB_falconChannelActive.Value;
 
 channel.GeneratePhases();
 
@@ -2308,8 +2296,6 @@ function EB_falconPhaseOneAmp_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-
-
 
 function EB_falconPhaseOneWidth_Callback(hObject, eventdata, handles)
 % hObject    handle to EB_falconPhaseOneWidth (see GCBO)
@@ -2460,8 +2446,13 @@ guidata(hObject, handles);
 function LoadChannel(handles)
 channel = SelectedChannel(handles);
 channel.PlotWaveform();
+
+%shared elements
 handles.CB_channelEnabled.Value = channel.Enabled;
-handles.CB_channelActive.Value = channel.Active;
+handles.EB_pulseRate.String = num2str(channel.Pulse.Frequency);
+
+%mode-specific
+handles.CB_falconChannelActive.Value = channel.Active;
 
 
 %called on startup and when user switches modes
@@ -2509,13 +2500,13 @@ function CB_channelEnabled_Callback(hObject, eventdata, handles)
 
 
 
-% --- Executes on button press in CB_channelActive.
-function CB_channelActive_Callback(hObject, eventdata, handles)
-% hObject    handle to CB_channelActive (see GCBO)
+% --- Executes on button press in CB_falconChannelActive.
+function CB_falconChannelActive_Callback(hObject, eventdata, handles)
+% hObject    handle to CB_falconChannelActive (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hint: get(hObject,'Value') returns toggle state of CB_channelActive
+% Hint: get(hObject,'Value') returns toggle state of CB_falconChannelActive
 
 
 
@@ -2543,3 +2534,19 @@ function EB_pulseRate_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+function bool = CheckElectrodeFractions(electrodeEdits)
+anodeSum = 0;
+cathodeSum = 0;
+for electrode = electrodeEdits
+    percent = str2double(electrode.String);
+    if percent > 0
+        anodeSum = anodeSum + percent;
+    else
+        cathodeSum = cathodeSum + percent;
+    end
+end
+
+bool = (anodeSum == 100 && cathodeSum == -100);
+
+

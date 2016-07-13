@@ -1,6 +1,6 @@
 classdef Constants
     properties (Constant = true)
-        MIN_AMPLITUDE_STEP = 10;
+        MAX_ELECTRODES = 32;
         ERROR_TOO_MANY_PHASES = 'Number of phases exceeds limit';
         INT_REQUIRED_ERROR = 'Please enter an integer value.';
         INVALID_NUMBER_ERROR = 'Please enter a valid number.';
@@ -22,6 +22,7 @@ classdef Constants
         %falcon defaults
         FALCON_DEFAULT_AMP = 16;
         FALCON_DEFAULT_WIDTH = 900;
+        FALCON_DEFAULT_RATE = 80;
         
         %global defaults
         DEFAULT_CHANNEL_NUM = 4;
