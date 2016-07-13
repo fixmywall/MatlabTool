@@ -48,7 +48,7 @@ end
 %(handles.rules)
 %i is selected channel index
 function InitializeObjects(handles)
-channel = handles.channels(handles.selectedChannel);
+channel = handles.channels{handles.selectedChannel};
 rules   = channel.Constraints;
 %initialize checkboxes
 handles.CB_enableChannel.Value      = channel.Enabled;
@@ -144,7 +144,7 @@ function radiobutton2_Callback(hObject, eventdata, handles)
 %returns true if there is no issue, otherwise false
 function SaveSettings(handles)
 %update the channel rules
-rules = handles.channels(handles.selectedChannel).Constraints;
+rules = handles.channels{handles.selectedChannel}.Constraints;
 rules.DelayEnabled = logical(handles.CB_delay.Value);
 rules.TimeDelay = str2double(handles.EB_delay.String);
 rules.WarmupEnabled = logical(handles.CB_warmup.Value);
@@ -158,7 +158,7 @@ rules.TimePassiveRecovery = str2double(handles.EB_passiveRecovery.String);
 rules.InterPulseEnabled = logical(handles.CB_interPulse.Value);
 
 %channel enabled settings
-handles.channels(handles.selectedChannel).Enabled = handles.CB_enableChannel.Value;
+handles.channels{handles.selectedChannel}.Enabled = handles.CB_enableChannel.Value;
 
 
 %makes edit box editable/uneditable based on state of checkbox

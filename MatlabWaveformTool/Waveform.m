@@ -3,18 +3,17 @@ classdef Waveform < handle
     %   
     
     properties
-        Pulses = Pulse.empty;
-        SelectedPulse = [];
+        Phases = Phase.empty;
         PulseAxes = [];
         WaveformAxes = [];
-        Scale = 100;        %represents percent from -100 to 100
+        Scale = 100;        %represents percent from -100 to 100   
+        Period=0;                %The total time spanned by the phases
         
         Constraints = [];
         
         %each channel has its own min/max amplitude
-        Active = true;
+        Active = false;          %channel can be active or passive
         Enabled = true;
-        MinAmp = [];
         MaxAmp = [];
     end
     
@@ -23,145 +22,236 @@ classdef Waveform < handle
             w.Constraints = Constraints(mode);
             w.PulseAxes = handles.axes_Pulse;
             w.WaveformAxes = handles.axes_Waveform;
-            w.MinAmp = 0;
             w.MaxAmp = w.Constraints.MaxAmplitude;
         end    
         
-        function n = NumUserPhases(obj)
-            n=0;
-            for i=1:obj.NumPulses()
-                n = n + obj.Pulses(i).NumUserPhases();
-            end
-        end
-        
-        %creates a new empty pulse, adds to Pulses and sets selectedpulse
-        %to it
-        function NewPulse(obj)
-            newPulse = Pulse(obj.Constraints);
-            obj.AddPulse(newPulse);
-            obj.SelectedPulse = newPulse;
-        end
-        
-        function num = NumPulses(obj)
-            num = length(obj.Pulses);
-        end
-        
-        function GeneratePhases(obj, ampType, widthType, minAmp, maxAmp, ampStep, minWidth, maxWidth, widthStep, num)
-            %if waveform is empty, add a new pulse
-            if (obj.NumPulses() == 0)
-                obj.NewPulse();
-            end
-            
+        function GeneratePhases(obj, ampType, widthType, minAmp, maxAmp, ampStep, minWidth, maxWidth, widthStep, num)          
             %if number of phases in the selected pulse exceeds limit,
             %display error and return
-            if num + obj.SelectedPulse.NumUserPhases() > obj.Constraints.MaxUserPhasesPerPulse
+            if num + obj.NumUserPhases() > obj.Constraints.MaxUserPhasesPerPulse
                 warningPopUpMenu(Constants.ERROR_TOO_MANY_PHASES);
                 return;
             end
-            obj.SelectedPulse.GeneratePhases(ampType, widthType, minAmp, maxAmp, ampStep, minWidth, maxWidth, widthStep, num); 
-           
-        end
-        
-        function AddPulse(obj, pulse)
-            if obj.NumPulses() == 0
-                obj.SelectedPulse = pulse;
-            end
-            obj.Pulses(end+1)=pulse;
-        end
-        
-        function AddPulses(obj, pulses)         %pulses is an array of pulse handles
-            if obj.NumPulses() == 0
-                obj.SelectedPulse = pulses(1);
-            end
-
-            obj.Pulses= [obj.Pulses,pulses];
-        end       
-        
-        function SelectPulse(obj,i)             %select the pulse indexed in Pulses by i
-            if (i>obj.NumPulses() || i<1)
-                return;
-            end
-            obj.SelectedPulse=obj.Pulses(i);
-            obj.PlotSelectedPulse();
-        end
-        
-        function RefreshPulse(obj, num)       %refreshes the pulse, generating n pulses with stochastic/ramping features
-            refreshedPulses = repmat(Pulse(obj.Constraints),1,num);
-            for i = 1:num
-                refreshedPulses(i) = obj.SelectedPulse.refreshPulse(i);
-            end
-            obj.AddPulses(refreshedPulses);
-        end
-
-        function PlotSelectedPulse(obj)
-            cla(obj.PulseAxes, 'reset');
-            obj.SelectedPulse.PlotPulse(obj.PulseAxes, 0, 100);
-        end
-        
-        %gets x and y axes arrays for plotting
-        function Y = GetAxesData(obj)
-            y = cell(1,obj.NumPulses());
-            t = cell(1,obj.NumPulses());
-            startTime = 0;
-            for i = 1:obj.NumPulses
-                Y_pulse = obj.Pulses(i).GetAxesData(startTime);
-                t{i} = Y_pulse{1};
-                y{i} = Y_pulse{2};
-                startTime = t{i}(end);
+            
+            newPhases = repmat(Phase([],[],[],[],[],[],[],PhaseTypes.Fixed, PhaseTypes.Fixed), 1,num);
+                        
+            for i=1:num       
+                newPhases(i) = Phase(  PhaseTypes.RectConfigurable, minAmp, maxAmp, ampStep, ...
+                                       minWidth, maxWidth, widthStep, ampType, widthType, 0);
             end
             
-            Y{1,:} = cell2mat(t);
-            Y{2,:} = cell2mat(y);
+            obj.AddPhases(newPhases); 
+            obj.PlotWaveform();
+        end
+        
+        function pulses = RefreshPulse(obj, num)       %refreshes the pulse, generating n pulses with stochastic/ramping features
+            pulses = repmat(Pulse(obj.Constraints),1,num);
+            for i = 1:num
+                pulses(i) = obj.Pulse.refreshPulse(i);
+            end
         end
         
         function PlotWaveform(obj)              %plots overall waveform and selected pulse
             cla(obj.WaveformAxes, 'reset');
             
             %get the axes data, and then plot the data onto waveformAxes
-            Y = obj.GetAxesData();
-            axes(obj.WaveformAxes);
+            Y = obj.GetAxesData(0);
+            axes(obj.PulseAxes);
             plot(Y{1}, obj.Scale/100* Y{2});
-            
-            if ~isempty(obj.SelectedPulse)
-                obj.PlotSelectedPulse();
-            end
         end
         
         function Reset(obj)
-            obj.Pulses = Pulse.empty;
-            obj.SelectedPulse = [];
+            obj.Phases = Phase.empty;
         end
         
         function TabulatePulses(obj, hTable)                %tabulates each pulse onto table pointed to be hTable
             hTable.Data = {};
-            for i=1:obj.NumPulses()                         %for each pulse
-                currentPulse = obj.Pulses(i);
-                row{1}=currentPulse.NumUserPhases();
-                row{2}='NA';
-                row{3}='NA';
+            row{1}=obj.NumUserPhases();
+            row{2}='NA';
+            row{3}='NA';
+            hTable.Data = [hTable.Data;row];
+        end
+        
+        function n = NumUserPhases(obj)
+            n = length(obj.Phases);
+        end
+        
+        function AddPhase(obj, p)
+            obj.Phases(end+1)=p;
+            %add to the Period the width of the phase
+            obj.Period=obj.Period+p.Width.value;
+        end     
+        
+        function SetPeriod(obj, rate)       %rate is in Hz
+            obj.Period = round(1e6/rate);
+        end
+        
+        function AddPhases(obj, phases)
+            obj.Phases = [obj.Phases, phases];
+            %add to the Period the width of the phases
+            for i=1:length(phases)
+                obj.Period=obj.Period+ phases(i).Width.value;
+            end
+        end
+        
+        function n = NumTotalPhases(obj)
+            if obj.NumUserPhases() == 0
+                numIP = 0;          %number of interphase delays
+            else
+                numIP = obj.NumUserPhases() - 1;
+            end
+            n = 5 + numIP + obj.NumUserPhases();
+        end
+        
+        %returns array of ALL phases, including the static ones
+        function P = GetAllPhases(obj)
+            delayPhase = Phase.StaticPhase(0, obj.Constraints.DelayEnabled * obj.Constraints.TimeDelay);
+            warmupPhase = Phase.StaticPhase(0, obj.Constraints.WarmupEnabled * obj.Constraints.TimeWarmup);
+            prePulsePhase = Phase.StaticPhase(obj.Constraints.PrePulseEnabled * obj.Constraints.AmplitudePrePulse, obj.Constraints.PrePulseEnabled * obj.Constraints.TimePrePulse);
+            
+            %add the interphase delay between each user-set phase
+            if obj.NumUserPhases() == 0
+                userPhases = [];
+            else
+                if obj.Constraints.InterPhaseEnabled
+                    userPhases = repmat(Phase([],[],[],[],[],[],[],PhaseTypes.Fixed, PhaseTypes.Fixed), 1,obj.NumUserPhases()*2-1);
+                    for i = 1:obj.NumUserPhases()
+                        if i == obj.NumUserPhases()
+                            userPhases(end) = obj.Phases(obj.NumUserPhases());
+                        else
+                            userPhases(2*i - 1) = obj.Phases(i);
+                            userPhases(2*i) = Phase.StaticPhase(0,obj.Constraints.TimeInterPhase);
+                        end
+                    end
+                else
+                    userPhases = obj.Phases;
+                end
+            end
+            P = [delayPhase, warmupPhase, prePulsePhase, userPhases];
+            
+            %compute total area to calculate the passiverecovery starting value
+            area=0;
+            for i=1:length(P)
+                area = area + P(i).Area();
+            end
+            %from the area and width of PR, calculate its starting
+            %point 
+            startPoint = obj.Constraints.PassiveRecoveryEnabled * obj.ComputePassiveRecoveryHeight(area);
+            recoveryPhase = Phase.PassiveRecovery(startPoint, obj.Constraints.PassiveRecoveryEnabled * obj.Constraints.TimePassiveRecovery);
+            P = [P, recoveryPhase];
+            
+            %interpulse phase width is determined by the period of the
+            %pulse
+            if obj.Constraints.InterPulseEnabled
+                time = 0;
+                for i=1:length(P)
+                    time = time + P(i).Width.value;
+                end
+                interPulsePhase = Phase.StaticPhase(0, obj.GetInterPulseWidth(time));
+            else
+                interPulsePhase = Phase.StaticPhase(0, 0);
+            end
+            
+            P = [P,interPulsePhase] ;
+        end   
+        
+        
+        function t = GetInterPulseWidth(obj, startTime)
+            t = obj.Period - startTime;
+            if t<0
+                t = 0;
+            end
+        end
+        
+        function Y = GetAxesData(obj, startTime)
+            allPhases = obj.GetAllPhases();
+            t=cell(1,length(allPhases));   
+            y=cell(1,length(allPhases));
+            start = startTime;
+            for i=1:length(allPhases)
+                phaseAxes = allPhases(i).GenerateArrays(start);
+                t{i} = phaseAxes{1};
+                y{i} = phaseAxes{2};
+                start = start+allPhases(i).Width.value;
+            end
+            Y{1}=cell2mat(t);
+            Y{2}=cell2mat(y);
+        end
+        
+        function PlotPulse(obj, axesHandle, startTime, yScale)
+            %T is a cell that holds the time domain vector for each phase
+            Y = obj.GetAxesData(startTime);
+            
+            %scale the range by yScale
+            Y{2}= yScale/100 *Y{2};
+            %plot the pulse
+            axes(axesHandle);
+            plot(Y{1},Y{2});
+        end
+        
+        %refresh num is the pulse after it is refreshed num times
+        function p = refreshPulse(obj, refreshNum)
+            p = Pulse(obj.Constraints);
+            refreshedPhases = repmat(Phase([],[],[],[],[],[],[],PhaseTypes.Fixed, PhaseTypes.Fixed, []), 1,obj.NumUserPhases());
+            for i=1:obj.NumUserPhases()
+                refreshedPhases(i)= obj.Phases(i).RefreshPhase(refreshNum);
+            end
+            p.AddPhases(refreshedPhases);
+        end
+        
+        function SetPhaseAmplitude(obj, i, newAmp)       %changes the amplitude of the phase indexed by i
+            if (i<1) || (i>obj.NumUserPhases())
+                return;
+            end
+            obj.Phases(i).Amplitude.value = newAmp;
+        end
+        
+        function SetPhaseWidth(obj, i, newWidth)         %changes the width of the phase indexed by i
+            if (i<1) || (i>obj.NumUserPhases())
+                return;
+            end
+            obj.Phases(i).Width.value = newWidth;
+        end
+        
+        function Tabulate(obj, hTable)              %tabulates the attributes of each phase carried by the pulse
+            for i=1:obj.NumUserPhases()
+                currentPhase=obj.Phases(i);
+                row{1}=currentPhase.Amplitude.value;
+                row{2}=currentPhase.Width.value;
+                switch currentPhase.AmpType
+                    case PhaseTypes.Fixed
+                        row{3}='Fixed';
+                    case PhaseTypes.Stochastic
+                        row{3}='Stochastic';
+                    case PhaseTypes.Ramped
+                        row{3}='Ramping'; 
+                end
+                switch currentPhase.WidthType
+                    case PhaseTypes.Fixed
+                        row{4}='Fixed';
+                    case PhaseTypes.Stochastic
+                        row{4}='Stochastic';
+                    case PhaseTypes.Ramped
+                        row{4}='Ramping'; 
+                end
                 hTable.Data = [hTable.Data;row];
             end
         end
-        
-        %wrapper for Pulse.SetPhaseWidth
-        function SetPhaseWidth(obj, i, width)
-            obj.SelectedPulse.SetPhaseWidth(i, width);
-        end
-        
-        %wrapper for Pulse.SetPhaseAmplitude
-        function SetPhaseAmplitude(obj, i, amp)
-            obj.SelectedPulse.SetPhaseAmplitude(i, amp);
-        end
-        
-        %used in falcon, makes n duplicates of the pulse
-        function RepeatSelectedPulse(obj, num) 
-            if num < 1
-                num = 1;
+    
+   
+        %in future: account for exponential passive recovery
+        function h = ComputePassiveRecoveryHeight(obj, area)
+            h=0;
+            width = obj.Constraints.TimePassiveRecovery;
+            if area ~= 0
+                h = -2*area / width;
+            else
+                switch obj.Constraints.Mode
+                    case Constants.MODE_FALCON
+                        h = 0.1 * rand() * obj.Phases(1).Amplitude.value;
+                end
             end
-            newPulses = repmat(obj.SelectedPulse, 1, num);
-            obj.Reset();
-            obj.AddPulses(newPulses);
-            obj.PlotWaveform();
+
         end
     end
 end
