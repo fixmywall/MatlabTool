@@ -22,7 +22,7 @@ function varargout = guiv6_1(varargin)
 
 % Edit the above text to modify the response to help guiv6_1
 
-% Last Modified by GUIDE v2.5 13-Jul-2016 14:31:32
+% Last Modified by GUIDE v2.5 13-Jul-2016 16:34:33
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -86,9 +86,6 @@ function varargout = guiv6_1_OutputFcn(hObject, eventdata, handles)
 % Get default command line output from handles structure
 varargout{1} = handles.output;
 
-
-function c = SelectedChannel(handles)
-c = handles.channels{handles.selectedChannel};
 
 
 % --- Executes on button press in checkbox9.
@@ -2044,7 +2041,7 @@ end
 
 %clears all channels
 function ClearData(handles)
-handles.channels = newChannels(handles);
+handles.program = Program(handles, handles.mode);
 cla(handles.axes_Pulse, 'reset');
 cla(handles.axes_Waveform, 'reset');
 guidata(handles.mainFig, handles);
@@ -2142,40 +2139,19 @@ else
     isInt = true;
 end
 
-function C = newChannels(handles)
-mode = handles.mode;
-C = cell(1, Constants.DEFAULT_CHANNEL_NUM);
-
-switch mode
-    case Constants.MODE_FALCON
-        for i=1:Constants.DEFAULT_CHANNEL_NUM
-            C{i} = FalconChannel.DefaultChannel(handles);
-        end
-    case Constants.MODE_SANDBOX
-        for i=1:Constants.DEFAULT_CHANNEL_NUM
-            C{i} = Waveform(handles, mode);
-        end
-end
-
 
 
 %SwitchMode: updates the waveform and GUI elements whenever the mode is switched
 function outHandles = SwitchMode(handles)
-%clear the channels
-handles.channels = [];
-handles.selectedChannel = 1;
-
-handles.channels = newChannels(handles);
-
+mode = handles.mode;
+%clear the program
+handles.program = Program(handles, mode);
 
 %populate the channel popup menu
-UpdateChannelPopupMenu(handles.POP_channelSelect, handles.channels);
-
-cla(handles.axes_Pulse, 'reset');
-cla(handles.axes_Waveform, 'reset');
+handles.program.UpdateChannelPopUpMenu(handles.POP_channelSelect);
 
 %toggle UI elements
-switch handles.mode
+switch mode
     case Constants.MODE_FALCON
         %update GUI
         handles.PANEL_phaseSetup.Visible = 'off';
@@ -2249,7 +2225,7 @@ function PB_plotElectrodeWaveform_Callback(hObject, eventdata, handles)
 % hObject    handle to PB_plotElectrodeWaveform (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
+handles.program.PlotElectrodeOutput();
 
 
 % --- Executes on button press in PB_falconUpdatePhase.
@@ -2257,7 +2233,7 @@ function PB_falconUpdatePhase_Callback(hObject, eventdata, handles)
 % hObject    handle to PB_falconUpdatePhase (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-channel = SelectedChannel(handles);
+channel = handles.program.SelectedChannel();
 
 %check for inconsistencies
 if ~CheckElectrodeFractions(handles.PANEL_electrodesPolarity.UserData)
@@ -2265,13 +2241,12 @@ if ~CheckElectrodeFractions(handles.PANEL_electrodesPolarity.UserData)
     return;
 end
 
-
+handles.program.UpdateElectrodes(handles.PANEL_electrodesPolarity.UserData);
 channel.GlobalAmp = str2double(handles.EB_falconPhaseOneAmp.String);
 channel.GlobalWidth = str2double(handles.EB_falconPhaseOneWidth.String);
 channel.Pulse.Frequency = str2double(handles.EB_pulseRate.String);
 channel.Enabled = handles.CB_channelEnabled.Value;
 channel.Active = handles.CB_falconChannelActive.Value;
-
 channel.GeneratePhases();
 
 
@@ -2349,10 +2324,10 @@ function pushbutton15_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 function outHandles = OpenSettings(handles)
-h = SandboxRuleSettings(handles.channels, handles.selectedChannel);
+h = SandboxRuleSettings(handles.program);
 uiwait(h);      %wait for the settings UI to close
-SelectedChannel(handles).PlotWaveform();
-handles.selectedChannel = str2double(handles.POP_channelSelect.String{handles.POP_channelSelect.Value});
+handles.program.SelectedChannel().PlotWaveform();
+handles.program.SelectedChannelIndex = str2double(handles.POP_channelSelect.String{handles.POP_channelSelect.Value});
 outHandles = handles;
 
 
@@ -2426,7 +2401,7 @@ function PB_falconNumPulsesApply_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 strval = handles.EB_falconNumPulses.String;
 if StringIsInteger(strval)
-    SelectedChannel(handles).RepeatSelectedPulse(str2double(strval));
+    handles.program.SelectedChannel().RepeatSelectedPulse(str2double(strval));
 end
 
 
@@ -2438,13 +2413,16 @@ function POP_channelSelect_Callback(hObject, eventdata, handles)
 
 % Hints: contents = cellstr(get(hObject,'String')) returns POP_channelSelect contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from POP_channelSelect
-handles.selectedChannel = str2double(hObject.String{hObject.Value});
+handles.program.SelectedChannelIndex = str2double(hObject.String{hObject.Value});
 LoadChannel(handles);
 guidata(hObject, handles);
 
 %loads the selected channel in handles into the GUI
 function LoadChannel(handles)
-channel = SelectedChannel(handles);
+channel = handles.program.SelectedChannel();
+
+cla(handles.axes_Pulse, 'reset');
+cla(handles.axes_Waveform, 'reset');
 channel.PlotWaveform();
 
 %shared elements
@@ -2453,14 +2431,6 @@ handles.EB_pulseRate.String = num2str(channel.Pulse.Frequency);
 
 %mode-specific
 handles.CB_falconChannelActive.Value = channel.Active;
-
-
-%called on startup and when user switches modes
-function UpdateChannelPopupMenu(hPop, channels)
-hPop.String = {};
-for i=1:length(channels)
-    hPop.String{i} = num2str(i);
-end
 
 
 % --- Executes during object creation, after setting all properties.
@@ -2548,5 +2518,3 @@ for electrode = electrodeEdits
 end
 
 bool = (anodeSum == 100 && cathodeSum == -100);
-
-

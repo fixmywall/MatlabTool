@@ -20,6 +20,8 @@ methods
         obj.Pulse.GenerateFalconPhases(obj.GlobalAmp, obj.GlobalWidth, obj.Active);
         obj.PlotWaveform();
     end
+    
+
 end
 
 methods(Static)

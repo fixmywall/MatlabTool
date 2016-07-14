@@ -48,7 +48,7 @@ end
 %(handles.rules)
 %i is selected channel index
 function InitializeObjects(handles)
-channel = handles.channels{handles.selectedChannel};
+channel = handles.program.SelectedChannel();
 rules   = channel.Constraints;
 %initialize checkboxes
 handles.CB_enableChannel.Value      = channel.Enabled;
@@ -84,9 +84,8 @@ function SandboxRuleSettings_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for SandboxRuleSettings
 handles.output = hObject;
-handles.channels = varargin{1};
-handles.selectedChannel = varargin{2};
-handles.POP_channel.Value = handles.selectedChannel;
+handles.program = varargin{1};
+handles.POP_channel.Value = handles.program.SelectedChannelIndex;
 
 %initializes UI components based on selected channel
 InitializeObjects(handles);
@@ -144,21 +143,21 @@ function radiobutton2_Callback(hObject, eventdata, handles)
 %returns true if there is no issue, otherwise false
 function SaveSettings(handles)
 %update the channel rules
-rules = handles.channels{handles.selectedChannel}.Constraints;
-rules.DelayEnabled = logical(handles.CB_delay.Value);
-rules.TimeDelay = str2double(handles.EB_delay.String);
-rules.WarmupEnabled = logical(handles.CB_warmup.Value);
-rules.TimeWarmup = str2double(handles.EB_warmup.String);
-rules.PrePulseEnabled = logical(handles.CB_prePulse.Value);
-rules.TimePrePulse = str2double(handles.EB_prePulse.String);
-rules.InterPhaseEnabled = logical(handles.CB_interPhase.Value);
-rules.TimeInterPhase = str2double(handles.EB_interPhase.String);
-rules.PassiveRecoveryEnabled = logical(handles.CB_passiveRecovery.Value);
-rules.TimePassiveRecovery = str2double(handles.EB_passiveRecovery.String);
-rules.InterPulseEnabled = logical(handles.CB_interPulse.Value);
+oldRules = handles.program.SelectedChannel().Constraints;
+oldRules.DelayEnabled = logical(handles.CB_delay.Value);
+oldRules.TimeDelay = str2double(handles.EB_delay.String);
+oldRules.WarmupEnabled = logical(handles.CB_warmup.Value);
+oldRules.TimeWarmup = str2double(handles.EB_warmup.String);
+oldRules.PrePulseEnabled = logical(handles.CB_prePulse.Value);
+oldRules.TimePrePulse = str2double(handles.EB_prePulse.String);
+oldRules.InterPhaseEnabled = logical(handles.CB_interPhase.Value);
+oldRules.TimeInterPhase = str2double(handles.EB_interPhase.String);
+oldRules.PassiveRecoveryEnabled = logical(handles.CB_passiveRecovery.Value);
+oldRules.TimePassiveRecovery = str2double(handles.EB_passiveRecovery.String);
+oldRules.InterPulseEnabled = logical(handles.CB_interPulse.Value);
 
 %channel enabled settings
-handles.channels{handles.selectedChannel}.Enabled = handles.CB_enableChannel.Value;
+handles.program.SelectedChannel().Enabled = handles.CB_enableChannel.Value;
 
 
 %makes edit box editable/uneditable based on state of checkbox
@@ -416,7 +415,7 @@ function POP_channel_Callback(hObject, eventdata, handles)
 
 % Hints: contents = cellstr(get(hObject,'String')) returns POP_channel contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from POP_channel
-handles.selectedChannel = hObject.Value;
+handles.program.SelectedChannelIndex = hObject.Value;
 InitializeObjects(handles);
 guidata(hObject, handles);
 

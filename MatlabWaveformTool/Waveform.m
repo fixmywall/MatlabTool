@@ -14,7 +14,7 @@ classdef Waveform < handle
         Active = false;          %channel can be active or passive
         Enabled = true;
         MaxAmp = [];
-        ElectrodeFractions = [];
+        Electrodes = [];    %stores the percentage of current from each electrode
     end
     
     methods  
@@ -22,7 +22,7 @@ classdef Waveform < handle
             constraints = Constraints(mode);
             w.Pulse = Pulse(constraints);
             w.Constraints = constraints;
-            w.ElectrodeFractions = zeros(1,constraints.MaxElectrodes);
+            w.Electrodes = zeros(1,constraints.MaxElectrodes);
             w.PulseAxes = handles.axes_Pulse;
             w.WaveformAxes = handles.axes_Waveform;
             w.MaxAmp = w.Constraints.MaxAmplitude;
@@ -38,6 +38,7 @@ classdef Waveform < handle
             end
             
             obj.Pulse.GeneratePhases(ampType, widthType, minAmp, maxAmp, ampStep, minWidth, maxWidth, widthStep, num);
+            obj.PlotWaveform();
         end
         
         function pulses = RefreshPulse(obj, num)       %refreshes the pulse, generating n pulses with stochastic/ramping features
@@ -60,6 +61,15 @@ classdef Waveform < handle
             obj.Pulse = Phase.empty;
         end
         
+        function n = NumActiveElectrodes(obj)
+            n=0;
+            for i=1:obj.MaxElectrodes()
+                if obj.Electrodes(i) > 0
+                    n=n+1;
+                end
+            end
+        end
+        
         function TabulatePulses(obj, hTable)                %tabulates each pulse onto table pointed to be hTable
             hTable.Data = {};
             row{1}=obj.NumUserPhases();
@@ -69,7 +79,7 @@ classdef Waveform < handle
         end
         
         function n = NumUserPhases(obj)
-            n = obj.Pulse.NumUserPhases(obj);
+            n = obj.Pulse.NumUserPhases();
         end
         
         function AddPhase(obj, p)
@@ -99,6 +109,10 @@ classdef Waveform < handle
         
         function SetPhaseWidth(obj, i, newWidth)         %changes the width of the phase indexed by i
             obj.Pulse.SetPhaseWidth(i, newWidth);
+        end
+        
+        function n = MaxElectrodes(obj)
+            n = obj.Constraints.MaxElectrodes;
         end
     end
     
