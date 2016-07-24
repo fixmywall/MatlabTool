@@ -67,20 +67,21 @@ classdef Phase < handle
         %generates a 'refreshed' phase array for the next pulse, takes into
         %account stochastic/ramping properties. 
         function Y = GenerateArrays(obj, startTime)
-            if obj.Type == PhaseTypes.PassiveRecovery
-                Y{1} = linspace(startTime, startTime + obj.Width.value, 100);
-                
-                newT = Y{1}-startTime;
-                Y{2} = obj.Amplitude.value * exp(-(Y{1}-startTime)* 7 / obj.Width.value);
-                
+            dt = 1; 
+            %1 us resolution
+            if obj.Width.value == 0
+                Y{1} = [];
+                Y{2} = [];
             else
-                Y{1} = [startTime, startTime+obj.Width.value];
-                Y{2} = [obj.Amplitude.value, obj.Amplitude.value];
+                Y{1} = (startTime:dt:startTime + obj.Width.value - 1);
+                if obj.Type == PhaseTypes.PassiveRecovery
+                    Y{2} = obj.Amplitude.value * exp(-(Y{1}-startTime)* 25 / obj.Width.value);
+                else    %otherwise the phase is a rectangular pulse
+
+                    I(1:length(Y{1})) = obj.Amplitude.value;
+                    Y{2} = I;
+                end
             end
-        end
-        
-        function t = GenerateDomain(obj, start)
-            t = [start, start+obj.Width.value];
         end
         
         function p = RefreshPhase(obj, refreshNum)
@@ -103,7 +104,13 @@ classdef Phase < handle
             p = Phase(PhaseTypes.RectStatic, amp, amp, 0, width, width, 0, PhaseTypes.Fixed, PhaseTypes.Fixed, 0);
         end
         
-        function p = PassiveRecovery(start, width)
+        function p = PassiveRecovery(prevPhases, width)
+            area = 0;
+            for ph = prevPhases
+                area = area + ph.Area();
+            end
+            
+            start = -2*area / width;
             p = Phase(PhaseTypes.PassiveRecovery, start, start, 0, width, width, 0, PhaseTypes.Fixed, PhaseTypes.Fixed, 0);
         end
     end
