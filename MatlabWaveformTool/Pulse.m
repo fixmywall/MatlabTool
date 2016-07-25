@@ -3,11 +3,21 @@ classdef Pulse < handle
     %   Detailed explanation goes here
     
     properties
-        Phases = Phase.empty;       %only contains user-generated phases
-        Frequency = 0;
-        Constraints = [];
-        RandomPR = [];          %random passive recovery multiplier, between 0 and 0.1
-        Active = false;
+        Phases          = Phase.empty;       %only contains user-generated phases
+        Frequency       = 0;
+        Rules           = [];
+        RandomPR        = [];          %random passive recovery multiplier, between 0 and 0.1
+        Active          = false;
+        
+        %phase properties
+        PrePulseWidth               = 0;
+        DelayWidth                  = 0;
+        WarmUpWidth                 = 0;
+        ReloadWidth                 = 0;
+        ArbitrationWidth            = 0;
+        InterPhaseWidth             = 0;
+        PassiveRecoveryWidth        = 0;
+        HoldoffTime                 = 0;
     end
     
     methods

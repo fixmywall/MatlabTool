@@ -14,6 +14,7 @@ properties
     %the electrode
     ElectrodeOccupation = [];
     HWConstraints = [];
+    FalconRules = FalconProgrammingRules();
 end
 
 methods
@@ -197,6 +198,11 @@ methods
         for channel = obj.Channels
             e = e + channel.Pulse.Energy();
         end
+    end
+    
+    function OpenFalconRuleSettings(obj, handles)
+        h = FalconRuleSettings(obj.FalconRules);
+        uiwait(h);
     end
 end
 

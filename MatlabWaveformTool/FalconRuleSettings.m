@@ -22,7 +22,7 @@ function varargout = FalconRuleSettings(varargin)
 
 % Edit the above text to modify the response to help FalconRuleSettings
 
-% Last Modified by GUIDE v2.5 21-Jul-2016 14:32:00
+% Last Modified by GUIDE v2.5 24-Jul-2016 20:02:08
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -54,13 +54,17 @@ function FalconRuleSettings_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for FalconRuleSettings
 handles.output = hObject;
-
+handles.rules = varargin{1};
 % Update handles structure
 guidata(hObject, handles);
 
 % UIWAIT makes FalconRuleSettings wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
 
+function InitEditBoxes(handles)
+rules = handles.rules;
+handles.EB_minAnodes = num2str(rules.MinimumAnodes);
+handles.EB_minCathodes = num2str(rules.MinimumCathodes);
 
 % --- Outputs from this function are returned to the command line.
 function varargout = FalconRuleSettings_OutputFcn(hObject, eventdata, handles) 
@@ -1008,18 +1012,18 @@ function checkbox24_Callback(hObject, eventdata, handles)
 
 
 
-function edit36_Callback(hObject, eventdata, handles)
-% hObject    handle to edit36 (see GCBO)
+function EB_minAnodes_Callback(hObject, eventdata, handles)
+% hObject    handle to EB_minAnodes (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit36 as text
-%        str2double(get(hObject,'String')) returns contents of edit36 as a double
+% Hints: get(hObject,'String') returns contents of EB_minAnodes as text
+%        str2double(get(hObject,'String')) returns contents of EB_minAnodes as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function edit36_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit36 (see GCBO)
+function EB_minAnodes_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to EB_minAnodes (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -1031,18 +1035,18 @@ end
 
 
 
-function edit37_Callback(hObject, eventdata, handles)
-% hObject    handle to edit37 (see GCBO)
+function EB_maxChannelsPassive_Callback(hObject, eventdata, handles)
+% hObject    handle to EB_maxChannelsPassive (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit37 as text
-%        str2double(get(hObject,'String')) returns contents of edit37 as a double
+% Hints: get(hObject,'String') returns contents of EB_maxChannelsPassive as text
+%        str2double(get(hObject,'String')) returns contents of EB_maxChannelsPassive as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function edit37_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit37 (see GCBO)
+function EB_maxChannelsPassive_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to EB_maxChannelsPassive (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -1054,18 +1058,18 @@ end
 
 
 
-function edit38_Callback(hObject, eventdata, handles)
-% hObject    handle to edit38 (see GCBO)
+function EB_minCathodes_Callback(hObject, eventdata, handles)
+% hObject    handle to EB_minCathodes (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit38 as text
-%        str2double(get(hObject,'String')) returns contents of edit38 as a double
+% Hints: get(hObject,'String') returns contents of EB_minCathodes as text
+%        str2double(get(hObject,'String')) returns contents of EB_minCathodes as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function edit38_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit38 (see GCBO)
+function EB_minCathodes_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to EB_minCathodes (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -1077,18 +1081,18 @@ end
 
 
 
-function edit39_Callback(hObject, eventdata, handles)
-% hObject    handle to edit39 (see GCBO)
+function EB_minChannelsActive_Callback(hObject, eventdata, handles)
+% hObject    handle to EB_minChannelsActive (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit39 as text
-%        str2double(get(hObject,'String')) returns contents of edit39 as a double
+% Hints: get(hObject,'String') returns contents of EB_minChannelsActive as text
+%        str2double(get(hObject,'String')) returns contents of EB_minChannelsActive as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function edit39_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit39 (see GCBO)
+function EB_minChannelsActive_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to EB_minChannelsActive (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -1100,18 +1104,18 @@ end
 
 
 
-function edit40_Callback(hObject, eventdata, handles)
-% hObject    handle to edit40 (see GCBO)
+function EB_minRatePassive_Callback(hObject, eventdata, handles)
+% hObject    handle to EB_minRatePassive (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit40 as text
-%        str2double(get(hObject,'String')) returns contents of edit40 as a double
+% Hints: get(hObject,'String') returns contents of EB_minRatePassive as text
+%        str2double(get(hObject,'String')) returns contents of EB_minRatePassive as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function edit40_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit40 (see GCBO)
+function EB_minRatePassive_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to EB_minRatePassive (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -1123,18 +1127,18 @@ end
 
 
 
-function edit41_Callback(hObject, eventdata, handles)
-% hObject    handle to edit41 (see GCBO)
+function EB_maxRatePassive_Callback(hObject, eventdata, handles)
+% hObject    handle to EB_maxRatePassive (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit41 as text
-%        str2double(get(hObject,'String')) returns contents of edit41 as a double
+% Hints: get(hObject,'String') returns contents of EB_maxRatePassive as text
+%        str2double(get(hObject,'String')) returns contents of EB_maxRatePassive as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function edit41_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit41 (see GCBO)
+function EB_maxRatePassive_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to EB_maxRatePassive (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -1146,18 +1150,18 @@ end
 
 
 
-function edit42_Callback(hObject, eventdata, handles)
-% hObject    handle to edit42 (see GCBO)
+function EB_minRateActive_Callback(hObject, eventdata, handles)
+% hObject    handle to EB_minRateActive (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit42 as text
-%        str2double(get(hObject,'String')) returns contents of edit42 as a double
+% Hints: get(hObject,'String') returns contents of EB_minRateActive as text
+%        str2double(get(hObject,'String')) returns contents of EB_minRateActive as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function edit42_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit42 (see GCBO)
+function EB_minRateActive_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to EB_minRateActive (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -1169,18 +1173,18 @@ end
 
 
 
-function edit43_Callback(hObject, eventdata, handles)
-% hObject    handle to edit43 (see GCBO)
+function EB_maxRateActive_Callback(hObject, eventdata, handles)
+% hObject    handle to EB_maxRateActive (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit43 as text
-%        str2double(get(hObject,'String')) returns contents of edit43 as a double
+% Hints: get(hObject,'String') returns contents of EB_maxRateActive as text
+%        str2double(get(hObject,'String')) returns contents of EB_maxRateActive as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function edit43_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit43 (see GCBO)
+function EB_maxRateActive_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to EB_maxRateActive (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -1192,18 +1196,18 @@ end
 
 
 
-function edit44_Callback(hObject, eventdata, handles)
-% hObject    handle to edit44 (see GCBO)
+function EB_maxEnergy_Callback(hObject, eventdata, handles)
+% hObject    handle to EB_maxEnergy (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit44 as text
-%        str2double(get(hObject,'String')) returns contents of edit44 as a double
+% Hints: get(hObject,'String') returns contents of EB_maxEnergy as text
+%        str2double(get(hObject,'String')) returns contents of EB_maxEnergy as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function edit44_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit44 (see GCBO)
+function EB_maxEnergy_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to EB_maxEnergy (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -1215,18 +1219,18 @@ end
 
 
 
-function edit45_Callback(hObject, eventdata, handles)
-% hObject    handle to edit45 (see GCBO)
+function EB_maxBandwidth_Callback(hObject, eventdata, handles)
+% hObject    handle to EB_maxBandwidth (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit45 as text
-%        str2double(get(hObject,'String')) returns contents of edit45 as a double
+% Hints: get(hObject,'String') returns contents of EB_maxBandwidth as text
+%        str2double(get(hObject,'String')) returns contents of EB_maxBandwidth as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function edit45_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit45 (see GCBO)
+function EB_maxBandwidth_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to EB_maxBandwidth (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
